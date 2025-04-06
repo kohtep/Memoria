@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{66563e89-6dea-4511-b1c1-55414e8ae6e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public">
+      <UniqueIdentifier>{8cf0b901-3e6d-4490-9ab6-f5c6fe205f3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor">
+      <UniqueIdentifier>{4d86e1a5-97ec-4b36-9a79-f28b0bea4a6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\hde">
+      <UniqueIdentifier>{6968e193-ae41-4f3b-b54c-10ddc4db275c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\hde\public">
+      <UniqueIdentifier>{d4d27c3e-9f50-4246-a5ca-ea28c7e30a36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\hde\src">
+      <UniqueIdentifier>{92beb7e1-e494-4781-954d-be87c0880e89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public\Captura">
+      <UniqueIdentifier>{abd0c5f8-8473-4a19-b069-54d02e3c342a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public\Cista">
+      <UniqueIdentifier>{40d72d36-a2cd-4b02-b8ed-d525d624ce92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public\Nucleus">
+      <UniqueIdentifier>{2d93a127-27f7-4f38-bd25-09219271dad8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Captura">
+      <UniqueIdentifier>{0a62a259-3880-4978-b312-27a435f8ffe5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Cista">
+      <UniqueIdentifier>{447a0c1b-a764-4458-9a01-d2df3e0161b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Nucleus">
+      <UniqueIdentifier>{c1c47535-c696-4754-ae56-25cb4213c9b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public\Auxilium">
+      <UniqueIdentifier>{db4075dc-d0ef-4f36-8853-a4206665a55f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\Cista\memoria_utils_buffer.cpp">
+      <Filter>src\Cista</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_read.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_rtti.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_search.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_signature.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_windows.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_write.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_ext_hook.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_ext_module.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_ext_patch.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_ext_sig.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_common.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_check.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_debug.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_errors.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_misc.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Nucleus\memoria_core_options.cpp">
+      <Filter>src\Nucleus</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Captura\memoria_captura_hook32.cpp">
+      <Filter>src\Captura</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Captura\memoria_captura_hook64.cpp">
+      <Filter>src\Captura</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Captura\memoria_captura_trampoline.cpp">
+      <Filter>src\Captura</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Captura\memoria_captura_function.cpp">
+      <Filter>src\Captura</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\vendor\hde\src\hde64.c">
+      <Filter>vendor\hde\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\vendor\hde\src\hde32.c">
+      <Filter>vendor\hde\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\public\Cista\memoria_utils_buffer.hpp">
+      <Filter>public\Cista</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_options.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_read.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_rtti.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_search.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_signature.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_windows.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_write.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_ext_hook.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_ext_module.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_ext_patch.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_ext_sig.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_common.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_check.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_debug.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_errors.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_misc.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Captura\memoria_captura_hook32.hpp">
+      <Filter>public\Captura</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Captura\memoria_captura_hook64.hpp">
+      <Filter>public\Captura</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Captura\memoria_captura_trampoline.hpp">
+      <Filter>public\Captura</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Captura\memoria_captura_function.hpp">
+      <Filter>public\Captura</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Captura\memoria_captura_common.hpp">
+      <Filter>public\Captura</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Auxilium\memoria_aux_boolean.hpp">
+      <Filter>public\Auxilium</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_core_hash.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Nucleus\memoria_amalgamation.hpp">
+      <Filter>public\Nucleus</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vendor\hde\public\table32.h">
+      <Filter>vendor\hde\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vendor\hde\public\table64.h">
+      <Filter>vendor\hde\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vendor\hde\public\hde32.h">
+      <Filter>vendor\hde\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vendor\hde\public\hde64.h">
+      <Filter>vendor\hde\public</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
