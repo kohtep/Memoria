@@ -40,10 +40,10 @@ int main()
 	some_module = Memoria::CMemoryModule::CreateFromAddress(nullptr);
 
 	/* Searching for SomeData inside the .EXE */
-	some_module->Sig("48 8B 05 ? ? ? ? 48 89 34", [](Memoria::CSigHandle &sig) -> void
+	some_module->Sig("48 8B 05 ? ? ? ? 48 89 34", [](Memoria::CSigHandle &sig, void *lpParam) -> void
 		{
 			some_data = sig.Add(3).Rip().As<uint64_t *>();
-		});
+		}, nullptr);
 
 	return 0;
 }
