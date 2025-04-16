@@ -1,10 +1,15 @@
 #include "memoria_core_write.hpp"
 
+#ifndef MEMORIA_DISABLE_CORE_WRITE
+
 #include "memoria_core_options.hpp"
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
 
+#include "memoria_utils_string.hpp"
+
 #include <Windows.h>
+#include <string_view>
 
 MEMORIA_BEGIN
 
@@ -34,11 +39,11 @@ bool WriteMemory(void *addr, const void *data, size_t size, ptrdiff_t offset, bo
 
 	if (use_setmem)
 	{
-		std::memset(addr, static_cast<int>(*static_cast<const uint8_t *>(data)), size);
+		FillMemory(addr, static_cast<int>(*static_cast<const uint8_t *>(data)), size);
 	}
 	else
 	{
-		std::memcpy(addr, data, size);
+		CopyMemory(addr, data, size);
 	}
 
 	if (!VirtualProtect(addr, size, old_protection, &old_protection))
@@ -150,14 +155,22 @@ bool WriteRelative(void *addr, const void *value, ptrdiff_t offset)
 	return WriteU32(addr, rel, offset);
 }
 
-bool WriteAStr(void *addr, const std::string_view &value, ptrdiff_t offset)
+bool WriteAStr(void *addr, const char *value, ptrdiff_t offset)
 {
-	return WriteMemory(addr, value.data(), (value.size() + sizeof(value[0])) * sizeof(value[0]), offset);
+	if (!value) 
+		return false;
+
+	size_t len = StrLenA(value);
+	return WriteMemory(addr, value, (len + 1) * sizeof(char), offset);
 }
 
-bool WriteWStr(void *addr, const std::wstring_view &value, ptrdiff_t offset)
+bool WriteWStr(void *addr, const wchar_t *value, ptrdiff_t offset)
 {
-	return WriteMemory(addr, value.data(), (value.size() + sizeof(value[0])) * sizeof(value[0]), offset);
+	if (!value) 
+		return false;
+
+	size_t len = StrLenW(value);
+	return WriteMemory(addr, value, (len + 1) * sizeof(wchar_t), offset);
 }
 
 bool FillChar(void *addr, int value, size_t size)
@@ -171,3 +184,5 @@ bool FillNops(void *addr, size_t size)
 }
 
 MEMORIA_END
+
+#endif

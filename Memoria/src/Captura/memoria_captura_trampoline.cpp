@@ -1,12 +1,18 @@
 #include "memoria_captura_trampoline.hpp"
 
+#ifndef MEMORIA_DISABLE_CAPTURA_HOOK64
+
 #include "memoria_core_misc.hpp"
 #include "memoria_core_write.hpp"
+#include "memoria_core_mempool.hpp"
 
 #include "memoria_captura_hook32.hpp"
 #include "memoria_captura_hook64.hpp"
 
 #include "memoria_utils_buffer.hpp"
+
+#include "memoria_utils_string.hpp"
+#include "memoria_utils_list.hpp"
 
 #include <list>
 
@@ -34,7 +40,7 @@ CTrampoline::CTrampoline(CHookMgr *manager, void *target, const void *hook, bool
 	buf.WriteU8(0xE9);
 	buf.WriteRelative(_hook, GetJmpHook());
 
-	std::memcpy(GetOriginal(), target, size);
+	CopyMemory(GetOriginal(), target, size);
 
 	auto _backup_new = PtrOffset(GetOriginal(), size);
 	auto _target_new = PtrOffset(target, size);
@@ -50,7 +56,7 @@ CTrampoline::~CTrampoline()
 
 bool CTrampoline::IsActive()
 {
-	return std::memcmp(_pointer, const_cast<const void *>(GetOriginal()), _size) != 0;
+	return CompareMemory(_pointer, const_cast<const void *>(GetOriginal()), _size) != 0;
 }
 
 bool CTrampoline::Hook()
@@ -120,7 +126,7 @@ bool CHookMgr::IsNear(const void *addr) const
 	return IsIn32BitRange(_data, addr);
 }
 
-static std::list<CHookMgr> gTrampolineMgrs;
+static Memoria::List<CHookMgr> gTrampolineMgrs;
 
 static CHookMgr *FindNearestTrampolineMgr(const void *addr)
 {
@@ -167,3 +173,5 @@ bool Hook64(void *target, const void *hook, void *trampoline, eInvokeMethod meth
 }
 
 MEMORIA_END
+
+#endif

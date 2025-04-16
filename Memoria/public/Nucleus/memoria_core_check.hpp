@@ -5,8 +5,6 @@
 #include "memoria_core_signature.hpp"
 
 #include <stdint.h>
-#include <string_view>
-#include <string>
 
 MEMORIA_BEGIN
 
@@ -181,17 +179,9 @@ extern bool CheckDouble(const void *addr, double value, ptrdiff_t offset = 0);
  * @param value The string value to compare with.
  * @param offset Preliminary offset relative to 'addr' before comparison.
  *
- * @note The null-terminator is not considered in comparison, as std::string_view
- *       stores a pointer and size, not a null-terminated string. This means the
- *       comparison length is strictly defined by value.size().
- *
- *       Examples:
- *         std::string_view{"test"}       // size() == 4, does NOT include '\0'
- *         std::string_view{"test\0abc", 7} // size() == 7, includes null and part of "abc"
- *
  * @return true if the memory content at the given address matches 'value', false otherwise.
  */
-extern bool CheckAStr(const void *addr, const std::string_view &value, ptrdiff_t offset = 0);
+extern bool CheckAStr(const void *addr, const char *value, ptrdiff_t offset = 0);
 
 /**
  * @brief Compares a wide-character (UTF-16/UTF-32) string at the specified memory address.
@@ -200,19 +190,11 @@ extern bool CheckAStr(const void *addr, const std::string_view &value, ptrdiff_t
  * @param value The wide string value to compare with.
  * @param offset Optional offset relative to 'addr' before comparison (in wchar_t).
  *
- * @note The null-terminator is not considered in comparison, as std::wstring_view
- *       holds a pointer and a length (in wchar_t elements), not a null-terminated string.
- *       This means that comparison is strictly limited to value.size() * sizeof(wchar_t) bytes.
- *
- *       Examples:
- *         std::wstring_view{L"test"}              // size() == 4, does NOT include L'\0'
- *         std::wstring_view{L"test\0xyz", 8}       // size() == 8, includes null and part of "xyz"
-
  * @return true if the memory content at the given address matches 'value', false otherwise.
  */
-extern bool CheckWStr(const void *addr, const std::wstring_view &value, ptrdiff_t offset = 0);
+extern bool CheckWStr(const void *addr, const wchar_t *value, ptrdiff_t offset = 0);
 
 extern bool CheckSignature(const void *addr, const CSignature &value, ptrdiff_t offset = 0);
-extern bool CheckSignature(const void *addr, const std::string_view &value, ptrdiff_t offset = 0);
+extern bool CheckSignature(const void *addr, const char *value, ptrdiff_t offset = 0);
 
 MEMORIA_END

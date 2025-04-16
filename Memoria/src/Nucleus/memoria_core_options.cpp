@@ -2,6 +2,8 @@
 
 #include "memoria_common.hpp"
 
+#ifndef MEMORIA_DISABLE_CORE_OPTIONS
+
 MEMORIA_BEGIN
 
 struct MemoriaContext_t
@@ -11,18 +13,12 @@ struct MemoriaContext_t
 	// which verifies all pointers for validity before starting work.
 	//
 	// It is recommended to disable this if you're confident that the memory is guaranteed to be valid.
-	bool SafeMode;
+	bool SafeMode = true;
 
-	MemoriaContext_t();
+	MemoriaContext_t() = default;
 };
 
-MemoriaContext_t::MemoriaContext_t()
-	: SafeMode(true)
-{
-
-}
-
-MemoriaContext_t memoria_ctx;
+static MemoriaContext_t memoria_ctx;
 
 void SetSafeModeState(bool value)
 {
@@ -35,3 +31,5 @@ bool IsSafeModeActive()
 }
 
 MEMORIA_END
+
+#endif

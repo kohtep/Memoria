@@ -1,10 +1,9 @@
 #pragma once
 
 #include "memoria_common.hpp"
+#include "memoria_utils_vector.hpp"
 
 #include <Windows.h>
-#include <string>
-#include <vector>
 
 MEMORIA_BEGIN
 
@@ -12,15 +11,19 @@ MEMORIA_BEGIN
  * @brief Retrieves the function name for the specified address from the PDB file, if available.
  *
  * @param address Pointer to the function.
+ * @param out Destination buffer for the symbol name.
+ * @param max_size Maximum size of the output buffer.
  *
- * @return The function name from the PDB file, or an empty string if the name could not be retrieved.
+ * @return true if the symbol was found, false otherwise.
  */
-extern std::string GetSymbolName(const void *address);
+extern bool GetSymbolName(const void *address, char *out, size_t max_size);
 
 /**
  * @brief Formats the function name for the specified address using the PDB file, if available.
  *
  * @param address Pointer to the function.
+ * @param out Destination buffer to receive the formatted name.
+ * @param max_size Maximum size of the output buffer.
  * @param concat_module_name If `true`, the module name will be used as a prefix.
  * @param memory_beautify_on_error Use an alternative formatting method if debug information is unavailable.
  *
@@ -32,9 +35,9 @@ extern std::string GetSymbolName(const void *address);
  * @warning In some cases, the function name cannot be retrieved from the PDB file even if it is present
  *          (in practice, this was observed only once — when attempting to retrieve the `main` name).
  *
- * @return The function name from the PDB file, or an empty string if the name could not be retrieved.
+ * @return true if formatting succeeded, false otherwise.
  */
-extern std::string GetBeautyFunctionAddress(const void *address, bool concat_module_name = true, bool memory_beautify_on_error = true);
+extern bool GetBeautyFunctionAddress(const void *address, char *out, size_t max_size, bool concat_module_name = true, bool memory_beautify_on_error = true);
 
 /**
  * @brief Retrieves a list of absolute function ranges for the specified module.
@@ -48,7 +51,7 @@ extern std::string GetBeautyFunctionAddress(const void *address, bool concat_mod
  *
  * @return A tuple collection of function address ranges (start and end addresses).
  */
-extern std::vector<std::tuple<void */*addr_start*/, void */*addr_end*/>> GetFunctionEntries(HMODULE handle);
+extern Memoria::Vector<std::tuple<void */*addr_start*/, void */*addr_end*/>> GetFunctionEntries(HMODULE handle);
 
 /**
  * @brief Retrieves the base address of the specified function.
@@ -67,7 +70,7 @@ extern void *GetFunctionBaseAddressFromItsCode(const void *address);
  *
  * @return The call stack.
  */
-extern std::vector<void *> GetStackBacktrace();
+extern __declspec(noinline) Memoria::Vector<void *> GetStackBacktrace();
 
 /**
  * @brief Retrieves the call stack in a beautified format for the calling code.
@@ -86,6 +89,8 @@ extern std::vector<void *> GetStackBacktrace();
  * 
  * @return A vector of strings representing the call stack.
  */
-extern std::vector<std::string> GetBeautyStackBacktrace();
+//extern Memoria::Vector<std::string> GetBeautyStackBacktrace();
+
+extern void *GetImageDirectoryData(void *base, bool image, uint16_t dir, uint32_t *size);
 
 MEMORIA_END

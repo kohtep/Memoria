@@ -1,12 +1,15 @@
 #include "memoria_ext_hook.hpp"
 
+#ifndef MEMORIA_DISABLE_EXT_HOOK
+
+#include "memoria_utils_string.hpp"
 #include "memoria_core_write.hpp"
 
 MEMORIA_BEGIN
 
 CShadowVTable::CShadowVTable(void *instance)
 {
-	assert(instance != nullptr);
+	Assert(instance != nullptr);
 
 	auto _instance = (void ***)instance;
 	void **_vmt_org = *_instance;
@@ -20,15 +23,15 @@ CShadowVTable::CShadowVTable(void *instance)
 
 CShadowVTable::CShadowVTable(void *instance, size_t methodCount)
 {
-	assert(instance != nullptr);
-	assert(methodCount > 0);
+	Assert(instance != nullptr);
+	Assert(methodCount > 0);
 
 	this->_instance = reinterpret_cast<Class *>(instance);
 	void **_vmt_org = this->_instance->vtable;
 
 	_vmt_shadow = std::make_unique<void *[]>(methodCount);
 
-	memcpy(_vmt_shadow.get(), _vmt_org, methodCount * sizeof(void *));
+	CopyMemory(_vmt_shadow.get(), _vmt_org, methodCount * sizeof(void *));
 
 	new (&_vmt_original) CVTable(instance);
 
@@ -46,3 +49,5 @@ void CShadowVTable::Hook(size_t index, const void *callback)
 }
 
 MEMORIA_END
+
+#endif

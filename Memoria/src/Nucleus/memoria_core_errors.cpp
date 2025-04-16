@@ -1,5 +1,7 @@
 #include "memoria_core_errors.hpp"
 
+#ifndef MEMORIA_DISABLE_CORE_ERRORS
+
 MEMORIA_BEGIN
 
 int memoria_last_error = 0;
@@ -34,3 +36,5 @@ OnErrorEvent_t GetErrorCallback()
 }
 
 MEMORIA_END
+
+#endif

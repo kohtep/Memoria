@@ -1,9 +1,9 @@
 #pragma once
 
 #include "memoria_common.hpp"
+#include "memoria_utils_assert.hpp"
 
 #include <stdint.h>
-#include <assert.h>
 #include <functional>
 #include <memory>
 
@@ -27,7 +27,7 @@ public:
 template <typename Ret, typename... Args>
 Ret CVTable::Invoke(size_t index, Args... args)
 {
-	assert(index >= 0);
+	Assert(index >= 0);
 
 	auto method = reinterpret_cast<void *>(_vtable[index]);
 
@@ -41,7 +41,8 @@ Ret CVTable::Invoke(size_t index, Args... args)
 template <typename Fn, typename... Args>
 auto CVTable::InvokeFn(size_t index, Args... args)
 {
-	assert(index >= 0);
+	Assert(index >= 0);
+
 	return ((Fn)_vtable[index])(args...);
 }
 
@@ -78,8 +79,8 @@ public:
 template <typename T>
 void CShadowVTable::Hook(size_t index, T hook)
 {
-	assert(index >= 0);
-	assert(hook != nullptr);
+	Assert(index >= 0);
+	Assert(hook != nullptr);
 
 	Hook(index, (void *)hook);
 }

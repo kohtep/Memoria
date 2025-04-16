@@ -4,7 +4,6 @@
 #include "memoria_core_signature.hpp"
 
 #include <stdint.h>
-#include <string>
 #include <vcruntime.h>
 
 MEMORIA_BEGIN
@@ -54,8 +53,8 @@ public:
 	std::optional<float> ReadFloat(ptrdiff_t offset = 0);
 	std::optional<double> ReadDouble(ptrdiff_t offset = 0);
 
-	std::string ReadAStr(ptrdiff_t offset = 0);
-	std::wstring ReadWStr(ptrdiff_t offset = 0);
+	bool ReadAStr(char *out, size_t max_size, ptrdiff_t offset = 0);
+	bool ReadWStr(wchar_t *out, size_t max_size, ptrdiff_t offset = 0);
 
 	//
 	// Search
@@ -80,7 +79,7 @@ public:
 
 	CSigHandle &FindBlock(const void *data, size_t size, bool backward = false, ptrdiff_t offset = 0);
 	CSigHandle &FindSignature(const CSignature &sig, bool backward = false, ptrdiff_t offset = 0);
-	CSigHandle &FindSignature(const std::string_view &sig, bool backward = false, ptrdiff_t offset = 0);
+	CSigHandle &FindSignature(const char *sig, bool backward = false, ptrdiff_t offset = 0);
 
 	CSigHandle &FindReference(const void *data, uint16_t opcode, bool search_absolute, bool search_relative,
 		bool backward = false, ptrdiff_t pre_offset = sizeof(int32_t), ptrdiff_t offset = 0);
@@ -123,11 +122,11 @@ public:
 	bool CheckFloat(float value, ptrdiff_t offset = 0) const;
 	bool CheckDouble(double value, ptrdiff_t offset = 0) const;
 
-	bool CheckAStr(const std::string_view &value, ptrdiff_t offset = 0) const;
-	bool CheckWStr(const std::wstring_view &value, ptrdiff_t offset = 0) const;
+	bool CheckAStr(const char *value, ptrdiff_t offset = 0) const;
+	bool CheckWStr(const wchar_t *value, ptrdiff_t offset = 0) const;
 
 	bool CheckSignature(const CSignature &value, ptrdiff_t offset = 0) const;
-	bool CheckSignature(const std::string_view &value, ptrdiff_t offset = 0) const;
+	bool CheckSignature(const char *value, ptrdiff_t offset = 0) const;
 
 	//
 	// Utility

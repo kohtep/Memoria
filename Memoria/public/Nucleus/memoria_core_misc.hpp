@@ -7,7 +7,6 @@
 
 #include <stdint.h>
 #include <Windows.h>
-#include <string>
 #include <functional>
 
 MEMORIA_BEGIN
@@ -217,7 +216,7 @@ extern __declspec(noinline) void *GetSelfAddress();
  *
  * @return
  */
-extern std::string GetModuleName(HMODULE hmod);
+bool GetModuleName(HMODULE hModule, char *out, size_t max_size);
 
 /**
  * @brief
@@ -226,7 +225,7 @@ extern std::string GetModuleName(HMODULE hmod);
  *
  * @return
  */
-extern std::string GetModuleNameForAddress(const void *address);
+bool GetModuleNameForAddress(const void *address, char *out, size_t max_size);
 
 /**
  * @brief
@@ -235,16 +234,7 @@ extern std::string GetModuleNameForAddress(const void *address);
  *
  * @return
  */
-extern std::string BeautifyPointer(const void *address);
-
-/**
- * @brief
- *
- * @param
- *
- * @return
- */
-extern bool Free(void *addr);
+bool BeautifyPointer(const void *addr, char *out, size_t max_size);
 
 /**
  * @brief
@@ -263,42 +253,6 @@ extern size_t Align(size_t value, int alignment = 16);
  * @return
  */
 extern void *Align(const void *value, int alignment = 16);
-
-/**
- * @brief
- *
- * @param
- *
- * @return
- */
-extern void *Alloc(size_t size, bool is_executable = false, bool is_readable = true, bool is_writable = true);
-
-/**
- * @brief
- *
- * @param
- *
- * @return
- */
-extern void *AllocNear(const void *addr_source, size_t size, bool is_executable = false, bool is_readable = true, bool is_writable = true);
-
-/**
- * @brief
- *
- * @param
- *
- * @return
- */
-extern void *AllocFar(const void *addr_source, size_t size, bool is_executable = false, bool is_readable = true, bool is_writable = true);
-
-/**
- * @brief
- *
- * @param
- *
- * @return
- */
-extern DWORD BeginThread(std::function<void()> &&fnFunction);
 
 /**
  * @brief
@@ -336,7 +290,7 @@ extern void *GetProcAddressDirect(fnv1a_t module_name_hash, fnv1a_t function_nam
  *
  * @return Pointer to the interface.
  */
-extern void *GetInterfaceAddress(HMODULE handle, std::string_view module_name);
+extern void *GetInterfaceAddress(HMODULE handle, const char *module_name);
 
 /**
  * @brief Retrieves a pointer to the `interface_name` interface from the library specified by `module_name`.
@@ -347,6 +301,6 @@ extern void *GetInterfaceAddress(HMODULE handle, std::string_view module_name);
  *
  * @return Pointer to the interface.
  */
-extern void *GetInterfaceAddress(std::string_view module_name, std::string_view interface_name);
+extern void *GetInterfaceAddress(const char *module_name, const char *nterface_name);
 
 MEMORIA_END

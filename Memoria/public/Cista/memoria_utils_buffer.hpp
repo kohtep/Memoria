@@ -1,16 +1,19 @@
+//
+// memoria_utils_buffer.hpp
+// 
+// A simple buffer for convenient construction of binary data.
+// 
+// Primary usage in Memoria — generating trampolines for hooks,
+// but it can be used anywhere.
+//
+
 #pragma once
 
 #include "memoria_common.hpp"
 
-#include <vector>
-#include <cstdint>
-#include <string_view>
-#include <filesystem>
-
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
-#include <string_view>
 
 MEMORIA_BEGIN
 
@@ -67,7 +70,7 @@ public:
 	// Where 'XX XX XX XX' is 0x12345678, followed by 0x7F. In this case, 'additional_offset' should be set to '1'.
 	bool WriteRelative(const void *addr_target, const void *addr_value, ptrdiff_t additional_offset = 0);
 
-	void WriteString(const std::string_view &str);
+	void WriteString(const char *str);
 	void WriteData(const void *src, size_t size);
 };
 

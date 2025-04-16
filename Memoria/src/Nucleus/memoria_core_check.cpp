@@ -1,8 +1,14 @@
 #include "memoria_core_check.hpp"
 
+#ifndef MEMORIA_DISABLE_CORE_CHECK
+
 #include "memoria_core_misc.hpp"
 #include "memoria_core_options.hpp"
 #include "memoria_core_errors.hpp"
+
+#include "memoria_utils_string.hpp"
+
+#include <string_view>
 
 MEMORIA_BEGIN
 
@@ -23,7 +29,7 @@ bool CheckMemory(const void *addr, const void *value, size_t size, ptrdiff_t off
 		}
 	}
 
-	return std::memcmp(PtrOffset(addr, offset), value, size) == 0;
+	return CompareMemory(PtrOffset(addr, offset), value, size) == 0;
 }
 
 bool CheckU8(const void *addr, uint8_t value, ptrdiff_t offset)
@@ -110,14 +116,22 @@ bool CheckDouble(const void *addr, double value, ptrdiff_t offset)
 	return CheckMemory(addr, &value, sizeof(value), offset);
 }
 
-bool CheckAStr(const void *addr, const std::string_view &value, ptrdiff_t offset)
+bool CheckAStr(const void *addr, const char *value, ptrdiff_t offset)
 {
-	return CheckMemory(addr, value.data(), value.size(), offset);
+	if (!value)
+		return false;
+
+	size_t len = StrLenA(value);
+	return CheckMemory(addr, value, len, offset);
 }
 
-bool CheckWStr(const void *addr, const std::wstring_view &value, ptrdiff_t offset)
+bool CheckWStr(const void *addr, const wchar_t *value, ptrdiff_t offset)
 {
-	return CheckMemory(addr, value.data(), value.size() * sizeof(wchar_t), offset * sizeof(wchar_t));
+	if (!value)
+		return false;
+
+	size_t len = StrLenW(value);
+	return CheckMemory(addr, value, len * sizeof(wchar_t), offset * sizeof(wchar_t));
 }
 
 bool CheckSignature(const void *addr, const CSignature &value, ptrdiff_t offset)
@@ -143,10 +157,15 @@ bool CheckSignature(const void *addr, const CSignature &value, ptrdiff_t offset)
 	return value.Match(addr);
 }
 
-bool CheckSignature(const void *addr, const std::string_view &value, ptrdiff_t offset)
+bool CheckSignature(const void *addr, const char *value, ptrdiff_t offset)
 {
+	if (!value)
+		return false;
+
 	CSignature sig(value);
 	return CheckSignature(addr, sig, offset);
 }
 
 MEMORIA_END
+
+#endif

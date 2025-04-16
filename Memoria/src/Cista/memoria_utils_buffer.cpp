@@ -1,7 +1,12 @@
 #include "memoria_utils_buffer.hpp"
 
+#ifndef MEMORIA_DISABLE_UTILS_BUFFER
+
 #include "memoria_core_write.hpp"
 #include "memoria_core_misc.hpp"
+#include "memoria_utils_string.hpp"
+
+#include "memoria_utils_string.hpp"
 
 MEMORIA_BEGIN
 
@@ -42,7 +47,7 @@ bool CBuffer::Clone(void *dest, bool is_code, ptrdiff_t offset)
 	}
 	else
 	{
-		std::memcpy(PtrOffset(dest, offset), _data, _pos);
+		CopyMemory(PtrOffset(dest, offset), _data, _pos);
 		return true;
 	}
 }
@@ -115,9 +120,13 @@ bool CWriteBuffer::WriteRelative(const void *addr_target, const void *addr_value
 	return true;
 }
 
-void CWriteBuffer::WriteString(const std::string_view &str)
+void CWriteBuffer::WriteString(const char *str)
 {
-	WriteData(str.data(), str.size() + sizeof('\0'));
+	if (!str) 
+		return;
+
+	size_t len = StrLenA(str);
+	WriteData(str, len + 1);
 }
 
 void CWriteBuffer::WriteData(const void *src, size_t size)
@@ -125,7 +134,7 @@ void CWriteBuffer::WriteData(const void *src, size_t size)
 	if (_pos + size > _size)
 		return;
 
-	std::memcpy(&_data[_pos], src, size);
+	CopyMemory(&_data[_pos], src, size);
 	_pos += size;
 }
 
@@ -140,7 +149,7 @@ uint16_t CReadBuffer::ReadU16()
 		return 0;
 
 	uint16_t value;
-	std::memcpy(&value, &_data[_pos], sizeof(value));
+	CopyMemory(&value, &_data[_pos], sizeof(value));
 	_pos += 2;
 
 	return value;
@@ -152,7 +161,7 @@ uint32_t CReadBuffer::ReadU32()
 		return 0;
 
 	uint32_t value;
-	std::memcpy(&value, &_data[_pos], sizeof(value));
+	CopyMemory(&value, &_data[_pos], sizeof(value));
 	_pos += 4;
 
 	return value;
@@ -164,7 +173,7 @@ uint64_t CReadBuffer::ReadU64()
 		return 0;
 
 	uint64_t value;
-	std::memcpy(&value, &_data[_pos], sizeof(value));
+	CopyMemory(&value, &_data[_pos], sizeof(value));
 	_pos += 8;
 
 	return value;
@@ -211,7 +220,7 @@ void CReadBuffer::ReadData(void *dest, size_t size)
 	if (_pos + size > _size)
 		return;
 
-	std::memcpy(dest, &_data[_pos], size);
+	CopyMemory(dest, &_data[_pos], size);
 	_pos += size;
 }
 
@@ -221,3 +230,5 @@ bool CReadBuffer::IsEndOfBuffer() const
 }
 
 MEMORIA_END
+
+#endif

@@ -5,8 +5,6 @@
 #include "memoria_core_signature.hpp"
 
 #include <stdint.h>
-#include <string_view>
-#include <string>
 
 #include <optional>
 #include <span>
@@ -28,11 +26,11 @@ extern std::optional<int64_t> ReadI64(const void *addr, ptrdiff_t offset = 0);
 extern std::optional<float> ReadFloat(const void *addr, ptrdiff_t offset = 0);
 extern std::optional<double> ReadDouble(const void *addr, ptrdiff_t offset = 0);
 
-extern std::string ReadAStr(const void *addr, ptrdiff_t offset = 0);
-extern std::wstring ReadWStr(const void *addr, ptrdiff_t offset = 0);
+extern bool ReadAStr(const void *addr, char *out, size_t max_size, ptrdiff_t offset = 0);
+extern bool ReadWStr(const void *addr, wchar_t *out, size_t max_size, ptrdiff_t offset = 0);
 
 extern bool GetMemoryBlock(const void *source, size_t size, void *dest);
-extern std::vector<uint8_t> GetMemoryData(const void *source, size_t size);
+extern Memoria::Vector<uint8_t> GetMemoryData(const void *source, size_t size);
 
 extern std::span<const uint8_t> GetMemorySpan(const void *source, size_t size);
 extern std::span<uint8_t> GetMemorySpan(void *source, size_t size);

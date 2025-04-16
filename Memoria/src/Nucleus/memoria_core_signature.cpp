@@ -1,6 +1,11 @@
 #include "memoria_core_signature.hpp"
 
-#include <assert.h>
+#include "memoria_utils_string.hpp"
+#include "memoria_utils_assert.hpp"
+
+#ifndef MEMORIA_DISABLE_CORE_SIGNATURE
+
+#include <string_view>
 
 MEMORIA_BEGIN
 
@@ -18,17 +23,20 @@ static int HexToInt(char ch)
 	return 0;
 }
 
-CSignature::CSignature(const std::string_view &str)
+CSignature::CSignature(const char *str)
 	: _payload{}, _mask{}, _has_optionals(false)
 {
-	size_t i = 0;
+	if (!str) return;
 
-	while (i < str.size())
+	size_t i = 0;
+	size_t len = StrLenA(str);
+
+	while (i < len)
 	{
-		while (i < str.size() && str[i] == ' ')
+		while (i < len && str[i] == ' ')
 			i++;
 
-		if (i >= str.size())
+		if (i >= len)
 		{
 			return;
 		}
@@ -39,7 +47,7 @@ CSignature::CSignature(const std::string_view &str)
 			_payload.push_back('\x00');
 			_mask.push_back('?');
 
-			while (i < str.size() && str[i] == '?')
+			while (i < len && str[i] == '?')
 				i++;
 		}
 		else
@@ -47,13 +55,13 @@ CSignature::CSignature(const std::string_view &str)
 			auto nibble_l = HexToInt(str[i]); i++;
 			auto nibble_r = HexToInt(str[i]); i++;
 
-			_payload.push_back((nibble_l << 4) | (nibble_r));
+			_payload.push_back((nibble_l << 4) | nibble_r);
 			_mask.push_back('x');
 		}
 	}
 }
 
-CSignature::CSignature(const void *data, size_t size, std::optional<uint8_t> ignore_byte)
+CSignature::CSignature(const void *data, size_t size, Memoria::Optional<uint8_t> ignore_byte)
 	: _payload{}, _mask{}, _has_optionals(false)
 {
 	_payload.reserve(size);
@@ -63,7 +71,7 @@ CSignature::CSignature(const void *data, size_t size, std::optional<uint8_t> ign
 
 	for (size_t i = 0; i < size; ++i)
 	{
-		if (ignore_byte && bytes[i] == *ignore_byte)
+		if (ignore_byte.has_value() && bytes[i] == ignore_byte.value())
 		{
 			_has_optionals = true;
 			_payload.push_back(0x00);
@@ -77,9 +85,9 @@ CSignature::CSignature(const void *data, size_t size, std::optional<uint8_t> ign
 	}
 }
 
-std::vector<std::optional<uint8_t>> CSignature::CreatePattern() const
+Memoria::Vector<Memoria::Optional<uint8_t>> CSignature::CreatePattern() const
 {
-	std::vector<std::optional<uint8_t>> std_sig;
+	Memoria::Vector<Memoria::Optional<uint8_t>> std_sig;
 	std_sig.reserve(_payload.size());
 
 	for (size_t i = 0; i < _payload.size(); i++)
@@ -99,7 +107,7 @@ bool CSignature::Match(const void *addr) const
 
 	if (!_has_optionals)
 	{
-		return std::memcmp(data, _payload.data(), _payload.size()) == 0;
+		return CompareMemory(data, _payload.data(), _payload.size()) == 0;
 	}
 	else
 	{
@@ -117,7 +125,7 @@ bool CSignature::Match(const void *addr) const
 
 bool CSignature::IsEmpty() const
 {
-	assert(_payload.empty() == _mask.empty());
+	Assert(_payload.empty() == _mask.empty());
 
 	return _payload.empty();
 }
@@ -128,3 +136,5 @@ bool CSignature::HasOptionals() const
 }
 
 MEMORIA_END
+
+#endif

@@ -1,8 +1,12 @@
 #include "memoria_core_windows.hpp"
 
+#ifndef MEMORIA_DISABLE_CORE_SIGNATURE
+
 #include "memoria_core_misc.hpp"
+#include "memoria_utils_string.hpp"
 
 #include <VersionHelpers.h>
+#include <string_view>
 
 MEMORIA_BEGIN
 
@@ -98,25 +102,25 @@ PIMAGE_SECTION_HEADER GetSectionByFlags(HMODULE handle, DWORD flags, bool match_
 	return nullptr;
 }
 
-PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const std::string_view &name)
+PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const char *name)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
-	if (!handle)
+	if (!handle || !name || !*name)
 		return nullptr;
 
-	if (name.empty())
-		return nullptr;
-
-	PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)handle;
-	PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((DWORD_PTR)dosHeader + dosHeader->e_lfanew);
+	PIMAGE_DOS_HEADER dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(handle);
+	PIMAGE_NT_HEADERS ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS>(
+		reinterpret_cast<DWORD_PTR>(dosHeader) + dosHeader->e_lfanew);
 
 	PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeaders);
 
+	size_t name_len = StrLenA(name);
+
 	for (unsigned int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++)
 	{
-		if (memcmp(section->Name, name.data(), name.size()) == 0)
+		if (CompareMemory(section->Name, name, name_len) == 0)
 		{
 			return section;
 		}
@@ -202,14 +206,14 @@ void *GetImageBase(HMODULE handle)
 	return (void *)pNTHeaders->OptionalHeader.ImageBase;
 }
 
-void *GetImageBase(const std::string_view &name)
+void *GetImageBase(const char *name)
 {
 	HMODULE handle;
 
-	if (name.empty())
-		handle = GetModuleHandleA(0);
+	if (!name || !*name)
+		handle = GetModuleHandleA(nullptr);
 	else
-		handle = GetModuleHandleA(name.data());
+		handle = GetModuleHandleA(name);
 
 	if (!handle)
 		return nullptr;
@@ -240,14 +244,14 @@ std::pair<WORD, WORD> GetModuleVersion(HMODULE handle)
 	};
 }
 
-std::pair<WORD, WORD> GetModuleVersion(const std::string_view &name)
+std::pair<WORD, WORD> GetModuleVersion(const char *name)
 {
 	HMODULE handle;
 
-	if (name.empty())
-		handle = GetModuleHandleA(0);
+	if (!name || !*name)
+		handle = GetModuleHandleA(nullptr);
 	else
-		handle = GetModuleHandleA(name.data());
+		handle = GetModuleHandleA(name);
 
 	if (!handle)
 		return { 0, 0 };
@@ -267,3 +271,5 @@ DWORD GetModuleSize(HMODULE handle)
 }
 
 MEMORIA_END
+
+#endif

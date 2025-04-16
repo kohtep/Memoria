@@ -1,10 +1,11 @@
 #include "memoria_captura_hook32.hpp"
 
+#ifndef MEMORIA_DISABLE_CAPTURA_HOOK32
+
 #include "memoria_utils_buffer.hpp"
+#include "memoria_utils_assert.hpp"
 
 #include "hde32.h"
-
-#include <assert.h>
 
 MEMORIA_BEGIN
 
@@ -83,7 +84,7 @@ static size_t WriteJumpAbs(void *addr_target, const void *addr_value)
 
 static size_t WriteJumpMem(void *addr_target, const void *addr_value)
 {
-	assert(!"WriteJumpMem is not supported in x32 mode.");
+	AssertMsg(false, "WriteJumpMem is not supported in x32 mode.");
 	return 0;
 }
 
@@ -140,3 +141,5 @@ size_t CalculateHookSize32(void *addr_target, eInvokeMethod method)
 }
 
 MEMORIA_END
+
+#endif

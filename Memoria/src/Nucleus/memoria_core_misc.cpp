@@ -1,39 +1,15 @@
 #include "memoria_core_misc.hpp"
 
+#ifndef MEMORIA_DISABLE_CORE_MISC
+
+#include "memoria_utils_string.hpp"
+
 #include <Windows.h>
-#include <filesystem>
-#include <list>
-#include <assert.h>
 #include <inttypes.h>
 
 #undef max
 
 MEMORIA_BEGIN
-
-struct MemoryChunk
-{
-public:
-	void *_chunk;
-
-public:
-	MemoryChunk()
-	{
-		_chunk = {};
-	}
-
-	MemoryChunk(void *chunk) : _chunk(chunk)
-	{
-		_chunk = chunk;
-	}
-
-	~MemoryChunk()
-	{
-		if (_chunk)
-			Free(_chunk);
-	}
-};
-
-static std::list<MemoryChunk> AllocatedChunks{};
 
 void *RelToAbsEx(const void *addr, ptrdiff_t pre_offset, ptrdiff_t post_offset)
 {
@@ -343,120 +319,77 @@ void *GetBaseAddress(const void *addr)
 	return result;
 }
 
-std::string GetModuleName(HMODULE hModule)
+bool GetModuleName(HMODULE hModule, char *out, size_t max_size)
 {
+	if (!out || max_size == 0)
+		return false;
+
 	char buffer[MAX_PATH];
 	if (GetModuleFileNameA(hModule, buffer, MAX_PATH) == 0)
-		return {};
+	{
+		out[0] = '\0';
+		return false;
+	}
 
-	std::filesystem::path modulePath(buffer);
+	const char *filename = FindLastCharA(buffer, '\\');
+	filename = filename ? filename + 1 : buffer;
 
-	return modulePath.filename().string();
+	StrNCopyA(out, filename, max_size);
+	return true;
 }
 
-std::string GetModuleNameForAddress(const void *address)
+bool GetModuleNameForAddress(const void *address, char *out, size_t max_size)
 {
-	auto hBase = (HMODULE)GetBaseAddress(address);
-	if (!hBase)
-		return {};
+	if (!out || max_size == 0)
+		return false;
 
-	return GetModuleName(hBase);
+	HMODULE base = (HMODULE)GetBaseAddress(address);
+	if (!base)
+	{
+		out[0] = '\0';
+		return false;
+	}
+
+	return GetModuleName(base, out, max_size);
 }
 
-std::string BeautifyPointer(const void *addr)
+bool BeautifyPointer(const void *addr, char *out, size_t max_size)
 {
+	if (!out || max_size == 0)
+		return false;
+
 	if (!addr)
-		return "null";
+	{
+		StrNCopyA(out, "null", max_size);
+		return true;
+	}
 
 	void *base = GetBaseAddress(addr);
 	if (!base)
 	{
-		char buffer[32];
-		std::snprintf(buffer, sizeof(buffer), "%p", addr);
-		return std::string(buffer);
+		FormatBufSafe(out, max_size, "%p", addr);
+		return true;
 	}
 
-	std::string name = GetModuleName((HMODULE)base);
-
-	const size_t last_slash_idx = name.find_last_of("\\/");
-	if (std::string::npos != last_slash_idx)
-		name.erase(0, last_slash_idx + 1);
-
-	const size_t period_idx = name.rfind('.');
-	if (std::string::npos != period_idx)
-		name.erase(period_idx);
-
-	char buffer[32];
-	std::snprintf(buffer, sizeof(buffer), "%llx", static_cast<unsigned long long>(reinterpret_cast<uintptr_t>(addr) - reinterpret_cast<uintptr_t>(base)));
-
-	return name + "." + buffer;
-}
-
-static DWORD CreateVirtualFlags(bool bExecutable, bool bReadable, bool bWritable)
-{
-	DWORD flags{};
-
-	if (bExecutable)
+	char modname[64];
+	if (!GetModuleName((HMODULE)base, modname, sizeof(modname)))
 	{
-		if (bReadable && bWritable)
-		{
-			flags = PAGE_EXECUTE_READWRITE;
-		}
-		else if (bReadable && !bWritable)
-		{
-			flags = PAGE_EXECUTE_READ;
-		}
-		else
-		{
-			flags = PAGE_EXECUTE;
-		}
-	}
-	else
-	{
-		if (bReadable && bWritable)
-		{
-			flags = PAGE_READWRITE;
-		}
-		else if (bReadable && !bWritable)
-		{
-			flags = PAGE_READONLY;
-		}
-		else
-		{
-			flags = PAGE_NOACCESS;
-		}
+		FormatBufSafe(out, max_size, "%p", addr);
+		return true;
 	}
 
-	return flags;
-}
+	char *last_dot = FindLastCharA(modname, '.');
+	if (last_dot)
+		*last_dot = '\0';
 
-bool Free(void *addr)
-{
-	return VirtualFree(addr, 0, MEM_RELEASE) != FALSE;
-}
-
-static void *AllocEx(const void *addr_source, size_t size, bool is_executable, bool is_readable, bool is_writable)
-{
-	assert(size != 0);
-
-	if (size == 0)
-		return nullptr;
-
-	DWORD flags = CreateVirtualFlags(is_executable, is_readable, is_writable);
-	DWORD type = addr_source ? MEM_RESERVE | MEM_COMMIT : MEM_COMMIT;
-
-	void *result = VirtualAlloc(const_cast<LPVOID>(addr_source), size, type, flags);
-
-	if (!result)
-		return nullptr;
-
-	AllocatedChunks.emplace_front(result);
-	return result;
+	uintptr_t offset = (uintptr_t)addr - (uintptr_t)base;
+	FormatBuf(out, "%s.%llx", modname, (unsigned long long)offset);
+	return true;
 }
 
 size_t Align(size_t value, int alignment)
 {
-	assert(alignment != 0);
+	//assert(alignment != 0);
 
 	if (alignment == 0)
 		return value;
@@ -484,109 +417,9 @@ void *Align(const void *value, int alignment)
 	return reinterpret_cast<void *>(addr);
 }
 
-void *Alloc(size_t size, bool is_executable, bool is_readable, bool is_writable)
-{
-	return AllocEx(nullptr, size, is_executable, is_readable, is_writable);
-}
-
-void *AllocNear(const void *addr_source, size_t size, bool is_executable, bool is_readable, bool is_writable)
-{
-	if (!addr_source)
-		return nullptr;
-
-	size = Align(size, 4096);
-
-	uintptr_t addr = reinterpret_cast<uintptr_t>(addr_source);
-
-#ifdef MEMORIA_32BIT
-	uintptr_t max_addr = 0x7FFFFFFF;
-#else
-	uintptr_t max_addr = addr + 0x7FFFFFFF;
-#endif
-
-	while (addr < max_addr)
-	{
-		void *mem = AllocEx(reinterpret_cast<void *>(addr), size, is_executable, is_readable, is_writable);
-
-		if (mem)
-			return mem;
-
-		addr += size;
-	}
-
-	return nullptr;
-}
-
-void *AllocFar(const void *addr_source, size_t size, bool is_executable, bool is_readable, bool is_writable)
-{
-	if (!addr_source)
-		return nullptr;
-
-	size = Align(size, 4096);
-
-#ifdef MEMORIA_32BIT
-	uintptr_t addr = 0x7FFFFFFF;
-#else
-	uintptr_t addr = reinterpret_cast<uintptr_t>(addr_source) + 0x7FFFFFFF;
-#endif
-
-	addr = (addr - size) & ~15;
-	uintptr_t min_addr = addr_source ? reinterpret_cast<uintptr_t>(addr_source) : 0;
-
-	while (addr > min_addr)
-	{
-		void *mem = AllocEx(reinterpret_cast<void *>(addr), size, is_executable, is_readable, is_writable);
-
-		if (mem)
-			return mem;
-
-		addr = (addr - size) & ~15;
-	}
-
-	return nullptr;
-}
-
 void *GetSelfAddress()
 {
 	return GetBaseAddress(_ReturnAddress());
-}
-
-static DWORD CALLBACK BeginLambdaThread(LPVOID pParam)
-{
-	if (!pParam)
-		return FALSE;
-
-	auto fn = static_cast<std::function<void()> *>(pParam);
-	(*fn)();
-	delete fn;
-
-	return TRUE;
-};
-
-static DWORD BeginCallbackThread(LPVOID pParam)
-{
-	if (!pParam)
-		return FALSE;
-
-	auto fn = static_cast<std::function<void()> *>(pParam);
-	(*fn)();
-	delete fn;
-
-	return TRUE;
-};
-
-DWORD BeginThread(std::function<void()> &&fnFunction)
-{
-	DWORD nThreadId;
-
-	auto pFn = new std::function<void()>(std::move(fnFunction));
-
-	HANDLE hThread = CreateThread(NULL, 0, BeginLambdaThread, pFn, 0, &nThreadId);
-	if (hThread == NULL)
-		return 0;
-
-	CloseHandle(hThread);
-	return nThreadId;
 }
 
 DWORD BeginThread(void (*fnFunction)(LPVOID), LPVOID param)
@@ -710,15 +543,12 @@ void *GetProcAddressDirect(fnv1a_t module_name_hash, fnv1a_t function_name_hash)
 
 using CreateInterfaceFn_t = void *(*)(const char *name, int *returnCode);
 
-void *GetInterfaceAddress(HMODULE handle, std::string_view module_name)
+void *GetInterfaceAddress(HMODULE handle, const char *interface_name)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
-	if (!handle)
-		return nullptr;
-
-	if (module_name.empty())
+	if (!handle || !interface_name || !*interface_name)
 		return nullptr;
 
 	volatile char createInterfaceName[17]{};
@@ -726,25 +556,28 @@ void *GetInterfaceAddress(HMODULE handle, std::string_view module_name)
 	// Crea -> aerC
 	// teIn -> nIet
 	// terf -> fret
-	// ace0 -> eca0
-	*(uint32_t *)&createInterfaceName[ 0] = 'aerC';
-	*(uint32_t *)&createInterfaceName[ 4] = 'nIet';
-	*(uint32_t *)&createInterfaceName[ 8] = 'fret';
+	// ace0 -> eca
+	*(uint32_t *)&createInterfaceName[0] = 'aerC';
+	*(uint32_t *)&createInterfaceName[4] = 'nIet';
+	*(uint32_t *)&createInterfaceName[8] = 'fret';
 	*(uint32_t *)&createInterfaceName[12] = 'eca';
 
-	auto pfnGetInterface = reinterpret_cast<CreateInterfaceFn_t>(GetProcAddress(handle, const_cast<LPCSTR>(createInterfaceName)));
+	auto pfnGetInterface = reinterpret_cast<CreateInterfaceFn_t>(
+		GetProcAddress(handle, const_cast<LPCSTR>(createInterfaceName))
+		);
+
 	if (!pfnGetInterface)
 		return nullptr;
 
-	return pfnGetInterface(module_name.data(), nullptr);
+	return pfnGetInterface(interface_name, nullptr);
 }
 
-void *GetInterfaceAddress(std::string_view module_name, std::string_view interface_name)
+void *GetInterfaceAddress(const char *module_name, const char *interface_name)
 {
-	if (!module_name.empty() || module_name.empty())
+	if (!module_name || !*module_name || !interface_name || !*interface_name)
 		return nullptr;
 
-	auto handle = GetModuleHandleA(module_name.data());
+	HMODULE handle = GetModuleHandleA(module_name);
 	if (!handle)
 		return nullptr;
 
@@ -752,3 +585,5 @@ void *GetInterfaceAddress(std::string_view module_name, std::string_view interfa
 }
 
 MEMORIA_END
+
+#endif

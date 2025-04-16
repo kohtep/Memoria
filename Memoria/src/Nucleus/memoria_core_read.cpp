@@ -1,10 +1,12 @@
 #include "memoria_core_read.hpp"
 
+#ifndef MEMORIA_DISABLE_CORE_READ
+
 #include "memoria_core_options.hpp"
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
 
-#include <assert.h>
+#include "memoria_utils_string.hpp"
 
 MEMORIA_BEGIN
 
@@ -149,26 +151,36 @@ std::optional<double> ReadDouble(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<double *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::string ReadAStr(const void *addr, ptrdiff_t offset)
+bool ReadAStr(const void *addr, char *out, size_t max_size, ptrdiff_t offset)
 {
+	if (!out || max_size == 0)
+		return false;
+
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
 		SetError(ME_INVALID_MEMORY);
-		return "";
+		return false;
 	}
 
-	return std::string(reinterpret_cast<const char *>(reinterpret_cast<uintptr_t>(addr) + offset));
+	const char *src = reinterpret_cast<const char *>(reinterpret_cast<uintptr_t>(addr) + offset);
+	StrNCopySafeA(out, max_size, src, _TRUNCATE);
+	return true;
 }
 
-std::wstring ReadWStr(const void *addr, ptrdiff_t offset)
+bool ReadWStr(const void *addr, wchar_t *out, size_t max_size, ptrdiff_t offset)
 {
+	if (!out || max_size == 0)
+		return false;
+
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
 		SetError(ME_INVALID_MEMORY);
-		return L"";
+		return false;
 	}
 
-	return std::wstring(reinterpret_cast<const wchar_t *>(reinterpret_cast<uintptr_t>(addr) + offset));
+	const wchar_t *src = reinterpret_cast<const wchar_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
+	StrNCopySafeW(out, max_size, src, _TRUNCATE);
+	return true;
 }
 
 bool GetMemoryBlock(const void *source, size_t size, void *dest)
@@ -176,7 +188,7 @@ bool GetMemoryBlock(const void *source, size_t size, void *dest)
 	if (source == nullptr || dest == nullptr)
 		return false;
 
-	std::memcpy(dest, source, size);
+	CopyMemory(dest, source, size);
 	return true;
 }
 
@@ -190,14 +202,16 @@ std::span<uint8_t> GetMemorySpan(void *source, size_t size)
 	return std::span<uint8_t>(static_cast<uint8_t *>(source), size);
 }
 
-std::vector<uint8_t> GetMemoryData(const void *source, size_t size)
+Memoria::Vector<uint8_t> GetMemoryData(const void *source, size_t size)
 {
-	std::vector<uint8_t> data(size);
+	Memoria::Vector<uint8_t> data(size);
 
 	if (source != nullptr)
-		std::memcpy(data.data(), source, size);
+		CopyMemory(data.data(), source, size);
 
 	return data;
 }
 
 MEMORIA_END
+
+#endif

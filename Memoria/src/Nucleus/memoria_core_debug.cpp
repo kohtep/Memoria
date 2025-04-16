@@ -1,91 +1,244 @@
 #include "memoria_core_debug.hpp"
+
+#ifndef MEMORIA_DISABLE_CORE_DEBUG
+
 #include "memoria_core_misc.hpp"
+#include "memoria_utils_string.hpp"
+#include "memoria_utils_optional.hpp"
 
 #include <Windows.h>
 #include <dbghelp.h>
-#include <stacktrace>
-
-#pragma comment(lib, "dbghelp.lib")
+#include <optional>
 
 MEMORIA_BEGIN
 
-static bool SymInited = false;
+static Memoria::Optional<bool> SymInited;
 
-static int SymShutdown()
+using SymCleanupFunc_t = BOOL(WINAPI *)(HANDLE);
+using SymInitializeFunc_t = BOOL(WINAPI *)(HANDLE, PCSTR, BOOL);
+using SymFromAddrFunc_t = BOOL(WINAPI *)(HANDLE, DWORD64, PDWORD64, PSYMBOL_INFO);
+
+static Memoria::Optional<SymCleanupFunc_t> SymCleanupFn;
+static Memoria::Optional<SymInitializeFunc_t> SymInitializeFn;
+static Memoria::Optional<SymFromAddrFunc_t> SymFromAddrFn;
+
+static HMODULE GetDbgHelpModule()
 {
-	if (SymInited)
-		SymCleanup(GetCurrentProcess());
+	HMODULE hDbgHelp;
 
-	return 0;
+	if (hDbgHelp = GetModuleHandleW(L"dbghelp.dll"))
+		hDbgHelp = LoadLibraryW(L"dbghelp.dll");
+
+	return hDbgHelp;
 }
 
-static void SymInit()
+static BOOL SymCleanupWrap(HANDLE hProcess)
 {
-	SymInited = SymInitialize(GetCurrentProcess(), NULL, TRUE);
-	onexit(SymShutdown);
+	if (!SymCleanupFn.has_value())
+	{
+		if (auto hDbgHelp = GetDbgHelpModule())
+			SymCleanupFn = reinterpret_cast<SymCleanupFunc_t>(GetProcAddress(hDbgHelp, "SymCleanup"));
+		else
+			SymCleanupFn = nullptr;
+	}
+
+	return SymCleanupFn.value() ? SymCleanupFn.value()(hProcess) : FALSE;
 }
 
-std::string GetSymbolName(const void *address)
+static BOOL SymInitializeWrap(HANDLE hProcess, PCSTR UserSearchPath, BOOL fInvadeProcess)
 {
-	static bool ensure_sym_init = (SymInit(), true);
+	if (!SymInitializeFn.has_value())
+	{
+		if (auto hDbgHelp = GetDbgHelpModule())
+			SymInitializeFn = reinterpret_cast<SymInitializeFunc_t>(GetProcAddress(hDbgHelp, "SymInitialize"));
+		else
+			SymInitializeFn = nullptr;
+	}
 
-	if (!SymInited)
-		return "";
+	return SymInitializeFn.value() ? SymInitializeFn.value()(hProcess, UserSearchPath, fInvadeProcess) : FALSE;
+}
+
+static BOOL SymFromAddrWrap(HANDLE hProcess, DWORD64 Address, PDWORD64 Displacement, PSYMBOL_INFO Symbol)
+{
+	if (!SymFromAddrFn.has_value())
+	{
+		if (auto hDbgHelp = GetDbgHelpModule())
+			SymFromAddrFn = reinterpret_cast<SymFromAddrFunc_t>(GetProcAddress(hDbgHelp, "SymFromAddr"));
+		else
+			SymFromAddrFn = nullptr;
+	}
+
+	return SymFromAddrFn.value() ? SymFromAddrFn.value()(hProcess, Address, Displacement, Symbol) : FALSE;
+}
+
+template <typename T>
+static void *ImageDirectoryEntryToDataT(void *base,
+	bool image,
+	uint16_t dir,
+	uint32_t *size)
+{
+	auto dos = reinterpret_cast<IMAGE_DOS_HEADER *>(base);
+	if (dos->e_magic != IMAGE_DOS_SIGNATURE)
+		return nullptr;
+
+	auto nt = reinterpret_cast<T *>(
+		reinterpret_cast<uint8_t *>(base) + dos->e_lfanew);
+	if (nt->Signature != IMAGE_NT_SIGNATURE)
+		return nullptr;
+
+	if (size)
+		*size = 0;
+
+	if (dir >= nt->OptionalHeader.NumberOfRvaAndSizes)
+		return nullptr;
+
+	uint32_t addr = nt->OptionalHeader.DataDirectory[dir].VirtualAddress;
+	if (!addr)
+		return nullptr;
+
+	if (size)
+		*size = nt->OptionalHeader.DataDirectory[dir].Size;
+
+	if (image || addr < nt->OptionalHeader.SizeOfHeaders)
+		return reinterpret_cast<uint8_t *>(base) + addr;
+
+	auto sec = IMAGE_FIRST_SECTION(reinterpret_cast<IMAGE_NT_HEADERS *>(nt));
+	for (uint16_t i = 0; i < nt->FileHeader.NumberOfSections; ++i, ++sec)
+	{
+		auto va = sec->VirtualAddress;
+		auto sz = sec->SizeOfRawData > 0 ? sec->SizeOfRawData : sec->Misc.VirtualSize;
+
+		if (addr >= va && addr < va + sz)
+		{
+			auto delta = addr - va;
+			return reinterpret_cast<uint8_t *>(base) + sec->PointerToRawData + delta;
+		}
+	}
+
+	return nullptr;
+}
+
+void *GetImageDirectoryData(void *base,
+	bool image,
+	uint16_t dir,
+	uint32_t *size)
+{
+	auto dos = reinterpret_cast<IMAGE_DOS_HEADER *>(base);
+	if (dos->e_magic != IMAGE_DOS_SIGNATURE)
+		return nullptr;
+
+	auto ntBase = reinterpret_cast<IMAGE_NT_HEADERS *>(
+		reinterpret_cast<uint8_t *>(base) + dos->e_lfanew);
+	if (ntBase->Signature != IMAGE_NT_SIGNATURE)
+		return nullptr;
+
+	if (ntBase->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+		return ImageDirectoryEntryToDataT<IMAGE_NT_HEADERS64>(base, image, dir, size);
+
+	if (ntBase->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+		return ImageDirectoryEntryToDataT<IMAGE_NT_HEADERS32>(base, image, dir, size);
+
+	return nullptr;
+}
+
+static void SymShutdown()
+{
+	if (SymInited.has_value() && SymInited.value())
+	{
+		SymCleanupWrap(GetCurrentProcess());
+		SymInited = std::nullopt;
+	}
+}
+
+static bool SymInit()
+{
+	if (SymInited.has_value())
+		return SymInited.value();
+
+	SymInited = SymInitializeWrap(GetCurrentProcess(), NULL, TRUE);
+
+	if (SymInited.value())
+		atexit(SymShutdown);
+
+	return SymInited.value();
+}
+
+// The variable is moved outside the function to eliminate the generation of __chkstk calls.
+static char GetSymbolNameSymBuf[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+
+bool GetSymbolName(const void *address, char *out, size_t max_size)
+{
+	if (!address || !out || max_size == 0)
+		return false;
+
+	if (!SymInit())
+		return false;
 
 	DWORD64 displacement = 0;
-	char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
-	PSYMBOL_INFO symbol = reinterpret_cast<PSYMBOL_INFO>(buffer);
+	PSYMBOL_INFO symbol = reinterpret_cast<PSYMBOL_INFO>(GetSymbolNameSymBuf);
 	symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 	symbol->MaxNameLen = MAX_SYM_NAME;
 
-	if (!SymFromAddr(GetCurrentProcess(), reinterpret_cast<DWORD64>(address), &displacement, symbol))
-		return "";
+	if (!SymFromAddrWrap(GetCurrentProcess(), reinterpret_cast<DWORD64>(address), &displacement, symbol))
+		return false;
 
-	return symbol->Name ? symbol->Name : "";
+	if (symbol->Name)
+	{
+		StrNCopySafeA(out, max_size, symbol->Name, _TRUNCATE);
+		return true;
+	}
+
+	return false;
 }
 
-std::string GetBeautyFunctionAddress(const void *address, bool concat_module_name, bool memory_beautify_on_error)
+bool GetBeautyFunctionAddress(const void *address, char *out, size_t max_size,
+	bool concat_module_name, bool memory_beautify_on_error)
 {
-	auto pBaseAddress = GetFunctionBaseAddressFromItsCode(address);
+	if (!address || !out || max_size == 0)
+		return false;
+
+	void *pBaseAddress = GetFunctionBaseAddressFromItsCode(address);
 	if (!pBaseAddress)
 	{
 		if (memory_beautify_on_error)
-			return BeautifyPointer(address);
-
-		return "";
+			return BeautifyPointer(address, out, max_size);
+		out[0] = '\0';
+		return false;
 	}
 
-	auto sName = GetSymbolName(pBaseAddress);
-	if (sName.empty())
+	char name[1024];
+	if (!GetSymbolName(pBaseAddress, name, sizeof(name)))
 	{
 		if (memory_beautify_on_error)
-			return BeautifyPointer(address);
-
-		return "";
+			return BeautifyPointer(address, out, max_size);
+		out[0] = '\0';
+		return false;
 	}
 
-	auto offset = reinterpret_cast<uintptr_t>(address) - reinterpret_cast<uintptr_t>(pBaseAddress);
+	uintptr_t offset = reinterpret_cast<uintptr_t>(address) - reinterpret_cast<uintptr_t>(pBaseAddress);
 
-	char buffer[32];
-	snprintf(buffer, sizeof(buffer), "+0x%llX", static_cast<unsigned long long>(offset));
+	char offset_str[32];
+	FormatBufSafe(offset_str, sizeof(offset_str), "+0x%llX", static_cast<unsigned long long>(offset));
 
-	std::string result{};
-
+	char module_prefix[512] = "";
 	if (concat_module_name)
 	{
 		HMODULE hModule = reinterpret_cast<HMODULE>(GetBaseAddress(address));
-
-		if (hModule != nullptr)
-			result += GetModuleName(hModule) + "!";
+		if (hModule)
+		{
+			GetModuleName(hModule, module_prefix, sizeof(module_prefix));
+			StrCatSafeA(module_prefix, sizeof(module_prefix), "!");
+		}
 	}
 
-	result += sName + buffer;
-	result += " [" + BeautifyPointer(address) + "]";
+	char pointer_str[128];
+	BeautifyPointer(address, pointer_str, sizeof(pointer_str));
 
-	return result;
+	int written = FormatBufSafe(out, max_size, "%s%s%s [%s]", module_prefix, name, offset_str, pointer_str);
+	return written > 0 && static_cast<size_t>(written) < max_size;
 }
 
-std::vector<std::tuple<void *, void *>> GetFunctionEntries(HMODULE handle)
+Memoria::Vector<std::tuple<void *, void *>> GetFunctionEntries(HMODULE handle)
 {
 	if (!handle)
 		handle = GetModuleHandleA(0);
@@ -93,16 +246,16 @@ std::vector<std::tuple<void *, void *>> GetFunctionEntries(HMODULE handle)
 	if (!handle)
 		return {};
 
-	ULONG size;
+	uint32_t size;
 	PIMAGE_RUNTIME_FUNCTION_ENTRY pFunc = reinterpret_cast<PIMAGE_RUNTIME_FUNCTION_ENTRY>(
-		ImageDirectoryEntryToData(handle, TRUE, IMAGE_DIRECTORY_ENTRY_EXCEPTION, &size));
+		GetImageDirectoryData(handle, TRUE, IMAGE_DIRECTORY_ENTRY_EXCEPTION, &size));
 
 	if (!pFunc)
 		return {};
 
 	DWORD count = size / sizeof(IMAGE_RUNTIME_FUNCTION_ENTRY);
 
-	std::vector<std::tuple<void *, void *>> result{};
+	Memoria::Vector<std::tuple<void *, void *>> result{};
 	result.reserve(count);
 
 	for (size_t i = 0u; i < count; ++i)
@@ -125,9 +278,9 @@ void *GetFunctionBaseAddressFromItsCode(const void *address)
 	if (!hModule)
 		return nullptr;
 
-	ULONG size;
+	uint32_t size;
 	PIMAGE_RUNTIME_FUNCTION_ENTRY pFunc = reinterpret_cast<PIMAGE_RUNTIME_FUNCTION_ENTRY>(
-		ImageDirectoryEntryToData(hModule, TRUE, IMAGE_DIRECTORY_ENTRY_EXCEPTION, &size));
+		GetImageDirectoryData(hModule, TRUE, IMAGE_DIRECTORY_ENTRY_EXCEPTION, &size));
 
 	if (!pFunc)
 		return nullptr;
@@ -151,41 +304,38 @@ void *GetFunctionBaseAddressFromItsCode(const void *address)
 	return nullptr;
 }
 
-std::vector<void *> GetStackBacktrace()
+Memoria::Vector<void *> GetStackBacktrace()
 {
-	std::vector<void *> result{};
+	Memoria::Vector<void *> result{};
 
-	auto trace = std::stacktrace::current();
-
-	for (const auto &frame : trace)
-		result.emplace_back(frame.native_handle());
-
-	//void *callers[128];
-	//int count = RtlCaptureStackBackTrace(0, _countof(callers), callers, NULL);
-	//
-	//for (int i = 2; i < count; i++)
-	//	result.push_back(callers[i]);
+	void *callers[128];
+	int count = RtlCaptureStackBackTrace(2, _countof(callers), callers, NULL);
+	
+	for (int i = 0; i < count; i++)
+		result.push_back(callers[i]);
 
 	return result;
 }
 
-std::vector<std::string> GetBeautyStackBacktrace()
-{
-	std::vector<std::string> result{};
-
-	auto backtrace = GetStackBacktrace();
-	if (backtrace.empty())
-		return result;
-
-	result.reserve(backtrace.size());
-
-	for (auto &&addr : backtrace)
-	{
-		auto sName = GetBeautyFunctionAddress(addr);
-		result.emplace_back(sName);
-	}
-
-	return result;
-}
+//Memoria::Vector<std::string> GetBeautyStackBacktrace()
+//{
+//	Memoria::Vector<std::string> result{};
+//
+//	auto backtrace = GetStackBacktrace();
+//	if (backtrace.empty())
+//		return result;
+//
+//	result.reserve(backtrace.size());
+//
+//	for (auto &&addr : backtrace)
+//	{
+//		auto sName = GetBeautyFunctionAddress(addr);
+//		result.emplace_back(sName);
+//	}
+//
+//	return result;
+//}
 
 MEMORIA_END
+
+#endif

@@ -2,6 +2,7 @@
 
 #include "memoria_common.hpp"
 
+#include "memoria_utils_vector.hpp"
 #include "memoria_core_signature.hpp"
 
 #include <stdint.h>
@@ -27,8 +28,8 @@ extern double *FindDouble(const void *addr_start, const void *addr_min, const vo
 
 extern void *FindBlock(const void *addr_start, const void *addr_min, const void *addr_max, const void *data, size_t size, bool backward = false, ptrdiff_t offset = 0);
 extern void *FindSignature(const void *addr_start, const void *addr_min, const void *addr_max, const CSignature &sig, bool backward = false, ptrdiff_t offset = 0);
-extern void *FindSignature(const void *addr_start, const void *addr_min, const void *addr_max, const std::string_view &sig, bool backward = false, ptrdiff_t offset = 0);
-extern void *FindFirstSignature(const void *addr_start, const void *addr_min, const void *addr_max, const std::vector<CSignature> &sig, bool backward = false, ptrdiff_t offset = 0);
+extern void *FindSignature(const void *addr_start, const void *addr_min, const void *addr_max, const char *sig, bool backward = false, ptrdiff_t offset = 0);
+extern void *FindFirstSignature(const void *addr_start, const void *addr_min, const void *addr_max, const Memoria::Vector<CSignature> &sig, bool backward = false, ptrdiff_t offset = 0);
 
 struct Ref_t
 {
@@ -47,7 +48,7 @@ struct Ref_t
 	}
 };
 
-extern std::vector<Ref_t> FindReferences(const void *addr_start, const void *addr_min, const void *addr_max, const void *data, uint16_t opcode,
+extern Memoria::Vector<Ref_t> FindReferences(const void *addr_start, const void *addr_min, const void *addr_max, const void *data, uint16_t opcode,
 	bool search_absolute, bool search_relative, bool stop_on_first_found = true, bool backward = false, ptrdiff_t pre_offset = sizeof(int32_t), ptrdiff_t offset = 0);
 
 extern void *FindReference(const void *addr_start, const void *addr_min, const void *addr_max, const void *data, uint16_t opcode, bool search_absolute, bool search_relative, 

@@ -1,11 +1,12 @@
 #include "memoria_core_rtti.hpp"
 
+#ifndef MEMORIA_DISABLE_CORE_RTTI
+
 #include "memoria_core_options.hpp"
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
 #include "memoria_core_search.hpp"
-
-#include <string>
+#include "memoria_utils_string.hpp"
 
 MEMORIA_BEGIN
 
@@ -97,7 +98,7 @@ struct RTTICompleteObjectLocator
 //	".P6A",
 //};
 
-void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void *addr_max, const std::string_view &rtti_name)
+void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void *addr_max, const char *rtti_name)
 {
 	if (IsSafeModeActive())
 	{
@@ -107,7 +108,7 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 			return nullptr;
 		}
 
-		if (rtti_name.empty())
+		if (!rtti_name || !*rtti_name)
 		{
 			SetError(ME_INVALID_ARGUMENT);
 			return nullptr;
@@ -120,7 +121,7 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 	size_t name_len;
 	bool is_full_name;
 
-	strcpy_s(name, rtti_name.data());
+	strcpy_s(name, rtti_name);
 
 	if (*(uint32_t *)name == CLASS_SIGNATURE)
 	{
@@ -131,7 +132,7 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 	{
 		is_full_name = false;
 		strcat_s(name, "@");
-		name_len = strlen(name);
+		name_len = StrLenA(name);
 	}
 
 	void *p = const_cast<void *>(addr_start);
@@ -189,7 +190,7 @@ void **GetVTableForDescriptor(const void *addr_start, const void *addr_min, cons
 	return nullptr;
 }
 
-void **GetVTableForClass(const void *addr_start, const void *addr_min, const void *addr_max, const std::string_view &rtti_name)
+void **GetVTableForClass(const void *addr_start, const void *addr_min, const void *addr_max, const char *rtti_name)
 {
 	auto desc = GetRTTIDescriptor(addr_start, addr_min, addr_max, rtti_name);
 	if (!desc)
@@ -199,3 +200,5 @@ void **GetVTableForClass(const void *addr_start, const void *addr_min, const voi
 }
 
 MEMORIA_END
+
+#endif

@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include <Windows.h>
-#include <string>
+#include <utility>
 
 MEMORIA_BEGIN
 
@@ -42,7 +42,7 @@ extern PIMAGE_SECTION_HEADER GetSectionByFlags(HMODULE handle, DWORD flags, bool
  *
  * @return Pointer to the `IMAGE_SECTION_HEADER` structure for the matched section, or nullptr if not found.
  */
-extern PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const std::string_view &name);
+extern PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const char *name);
 
 /**
  * @brief Returns a pointer to the section that contains the entry point.
@@ -90,7 +90,7 @@ extern void *GetImageBase(HMODULE handle);
  *
  * @return
  */
-extern void *GetImageBase(const std::string_view &name);
+extern void *GetImageBase(const char *name);
 
 /**
  * @brief
@@ -108,7 +108,7 @@ extern std::pair<WORD, WORD> GetModuleVersion(HMODULE handle);
  *
  * @return
  */
-extern std::pair<WORD, WORD> GetModuleVersion(const std::string_view &name);
+extern std::pair<WORD, WORD> GetModuleVersion(const char *name);
 
 /**
  * @brief

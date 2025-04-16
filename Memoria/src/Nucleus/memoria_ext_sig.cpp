@@ -1,20 +1,23 @@
 #include "memoria_ext_sig.hpp"
 
+#ifndef MEMORIA_DISABLE_EXT_SIG
+
 #include "memoria_core_search.hpp"
 #include "memoria_core_check.hpp"
+#include "memoria_core_errors.hpp"
 #include "memoria_core_read.hpp"
 #include "memoria_core_misc.hpp"
-#include "memoria_ext_sig.hpp"
 #include "memoria_ext_module.hpp"
+#include "memoria_utils_assert.hpp"
 
-#include <assert.h>
+#include <string_view>
 
 MEMORIA_BEGIN
 
 CSigHandle::CSigHandle(const void *mem_begin, const void *mem_end, void *output)
 	: _internal_data{}
 {
-	assert(mem_begin && mem_end);
+	Assert(mem_begin && mem_end);
 
 	_mem_begin = mem_begin;
 	_mem_end = mem_end;
@@ -50,17 +53,16 @@ void CSigHandle::SetOutputInternally(const void *value, bool deref)
 {
 	if (!_output)
 		return;
-
-	__try
+	
+	if (value && AssertIf(Memoria::IsMemoryValid(value)))
 	{
 		if (deref)
 			*_output = *reinterpret_cast<void **>(const_cast<void *>(value));
 		else
 			*_output = reinterpret_cast<void **>(const_cast<void *>(value));
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
+	else
 	{
-		assert(false);
 		*_output = {};
 	}
 
@@ -166,20 +168,20 @@ std::optional<double> CSigHandle::ReadDouble(ptrdiff_t offset)
 	return Memoria::ReadDouble(*_output, offset);
 }
 
-std::string CSigHandle::ReadAStr(ptrdiff_t offset)
+bool CSigHandle::ReadAStr(char *out, size_t max_size, ptrdiff_t offset)
 {
-	if (*_output == nullptr)
-		return {};
+	if (!_output || !*_output)
+		return false;
 
-	return Memoria::ReadAStr(*_output, offset);
+	return Memoria::ReadAStr(*_output, out, max_size, offset);
 }
 
-std::wstring CSigHandle::ReadWStr(ptrdiff_t offset)
+bool CSigHandle::ReadWStr(wchar_t *out, size_t max_size, ptrdiff_t offset)
 {
-	if (*_output == nullptr)
-		return {};
+	if (!_output || !*_output)
+		return false;
 
-	return Memoria::ReadWStr(*_output, offset);
+	return Memoria::ReadWStr(*_output, out, max_size, offset);
 }
 
 CSigHandle &CSigHandle::FindU8(uint8_t value, bool backward, ptrdiff_t offset)
@@ -358,8 +360,14 @@ CSigHandle &CSigHandle::FindSignature(const CSignature &sig, bool backward, ptrd
 	return *this;
 }
 
-CSigHandle &CSigHandle::FindSignature(const std::string_view &sig, bool backward, ptrdiff_t offset)
+CSigHandle &CSigHandle::FindSignature(const char *sig, bool backward, ptrdiff_t offset)
 {
+	if (!sig || !*sig)
+	{
+		SetError(ME_INVALID_ARGUMENT);
+		return *this;
+	}
+
 	CSignature s(sig);
 	return FindSignature(s, backward, offset);
 }
@@ -649,17 +657,17 @@ bool CSigHandle::CheckDouble(double value, ptrdiff_t offset) const
 	return Memoria::CheckDouble(*_output, value, offset);
 }
 
-bool CSigHandle::CheckAStr(const std::string_view &value, ptrdiff_t offset) const
+bool CSigHandle::CheckAStr(const char *value, ptrdiff_t offset) const
 {
-	if (*_output == nullptr)
+	if (!_output || !*_output || !value)
 		return false;
 
 	return Memoria::CheckAStr(*_output, value, offset);
 }
 
-bool CSigHandle::CheckWStr(const std::wstring_view &value, ptrdiff_t offset) const
+bool CSigHandle::CheckWStr(const wchar_t *value, ptrdiff_t offset) const
 {
-	if (*_output == nullptr)
+	if (!_output || !*_output || !value)
 		return false;
 
 	return Memoria::CheckWStr(*_output, value, offset);
@@ -673,10 +681,15 @@ bool CSigHandle::CheckSignature(const CSignature &value, ptrdiff_t offset) const
 	return Memoria::CheckSignature(*_output, value, offset);
 }
 
-bool CSigHandle::CheckSignature(const std::string_view &value, ptrdiff_t offset) const
+bool CSigHandle::CheckSignature(const char *value, ptrdiff_t offset) const
 {
+	if (!value)
+		return false;
+
 	CSignature sig(value);
 	return CheckSignature(sig, offset);
 }
 
 MEMORIA_END
+
+#endif

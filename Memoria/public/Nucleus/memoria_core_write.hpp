@@ -3,7 +3,6 @@
 #include "memoria_common.hpp"
 
 #include <stdint.h>
-#include <string_view>
 
 MEMORIA_BEGIN
 
@@ -28,8 +27,8 @@ extern bool WriteDouble(void *addr, double value, ptrdiff_t offset = 0);
 extern bool WritePointer(void *addr, const void *value, ptrdiff_t offset = 0);
 extern bool WriteRelative(void *addr, const void *value, ptrdiff_t offset = 0);
 
-extern bool WriteAStr(void *addr, const std::string_view &value, ptrdiff_t offset = 0);
-extern bool WriteWStr(void *addr, const std::wstring_view &value, ptrdiff_t offset = 0);
+extern bool WriteAStr(void *addr, const char *value, ptrdiff_t offset = 0);
+extern bool WriteWStr(void *addr, const wchar_t *value, ptrdiff_t offset = 0);
 
 extern bool FillChar(void *addr, int value, size_t size);
 extern bool FillNops(void *addr, size_t size);

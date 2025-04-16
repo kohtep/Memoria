@@ -1,5 +1,7 @@
 #include "memoria_ext_module.hpp"
 
+#ifndef MEMORIA_DISABLE_EXT_MODULE
+
 #include "memoria_core_misc.hpp"
 #include "memoria_core_search.hpp"
 #include "memoria_core_write.hpp"
@@ -7,7 +9,7 @@
 
 #include "memoria_ext_patch.hpp"
 
-#include <assert.h>
+#include "memoria_utils_assert.hpp"
 
 MEMORIA_BEGIN
 
@@ -21,7 +23,7 @@ CMemoryBlock::CMemoryBlock(const void *address, size_t size)
 
 const char *CMemoryBlock::GetName() const
 {
-	return _name.empty() ? "" : _name.c_str();
+	return (_name && *_name) ? "" : _name;
 }
 
 void *CMemoryBlock::GetBase() const
@@ -39,12 +41,12 @@ void *CMemoryBlock::GetLastByte() const
 	return _size ? PtrOffset(_address, _size - 1) : const_cast<void *>(_address);
 }
 
-CMemoryModule::CMemoryModule(const std::string_view &libname, size_t size) : CMemoryModule()
+CMemoryModule::CMemoryModule(const char *libname, size_t size) : CMemoryModule()
 {
-	if (libname.empty())
+	if (!libname || !*libname)
 		return;
 
-	auto handle = GetModuleHandleA(libname.data());
+	auto handle = GetModuleHandleA(libname);
 	if (!handle)
 		return;
 
@@ -54,7 +56,7 @@ CMemoryModule::CMemoryModule(const std::string_view &libname, size_t size) : CMe
 
 CMemoryModule::CMemoryModule(HMODULE handle, size_t size) : CMemoryModule()
 {
-	assert(handle && size > 0);
+	Assert(handle && size > 0);
 
 	_address = handle;
 	_size = size;
@@ -84,7 +86,7 @@ size_t CMemoryBlock::HookRefAddr(const void *addr_target, const void *addr_hook,
 		else
 			patch = Memoria::PatchRelative(ref.xref, addr_hook);
 
-		assert(patch);
+		Assert(patch);
 
 		if (patch != nullptr)
 			_patches.push_back(patch);
@@ -103,27 +105,27 @@ size_t CMemoryBlock::HookRefJump(const void *addr_target, const void *addr_hook)
 	return HookRefAddr(addr_target, addr_hook, 0xE9);
 }
 
-void CMemoryBlock::Sig(const CSignature &signature, const std::function<void(CSigHandle &)> &cb)
+void CMemoryBlock::Sig(const CSignature &signature, SigCallbackFn cb, void *lpParam)
 {
 	void *output = nullptr;
 	CSigHandle sig(this, &output);
 
 	sig.FindSignature(signature);
-	cb(sig);
+	cb(sig, lpParam);
 }
 
-void CMemoryBlock::Sig(const std::string_view &signature, const std::function<void(CSigHandle &)> &cb)
+void CMemoryBlock::Sig(const char *signature, SigCallbackFn cb, void *lpParam)
 {
 	CSignature sig(signature);
-	return Sig(sig, cb);
+	return Sig(sig, cb, lpParam);
 }
 
-void CMemoryBlock::Sig(const std::function<void(CSigHandle &)> &cb)
+void CMemoryBlock::Sig(SigCallbackFn cb, void *lpParam)
 {
 	void *output = nullptr;
 	CSigHandle sig(this, &output);
 
-	cb(sig);
+	cb(sig, lpParam);
 }
 
 std::pair<void *, size_t> CMemoryModule::GetSectionInfo(eSection section)
@@ -210,7 +212,7 @@ std::unique_ptr<CMemoryBlock> CMemoryModule::GetEntrySection()
 		(PtrOffset(GetHandle(), pSection->VirtualAddress), pSection->Misc.VirtualSize);
 }
 
-bool CMemoryModule::SigSec(eSection directory, const CSignature &signature, const std::function<void(CSigHandle &)> &cb)
+bool CMemoryModule::SigSec(eSection directory, const CSignature &signature, SigCallbackFn cb, void *lpParam)
 {
 	auto [ptr, size] = GetSectionInfo(directory);
 	if (!ptr)
@@ -219,37 +221,37 @@ bool CMemoryModule::SigSec(eSection directory, const CSignature &signature, cons
 	CSigHandle sig(ptr, PtrOffset(ptr, size - 1));
 	sig.FindSignature(signature);
 
-	cb(sig);
+	cb(sig, lpParam);
 
 	return true;
 }
 
-bool CMemoryModule::SigSec(eSection directory, const std::string_view &signature, const std::function<void(CSigHandle &)> &cb)
+bool CMemoryModule::SigSec(eSection directory, const char *signature, SigCallbackFn cb, void *lpParam)
 {
 	CSignature sig(signature);
-	return SigSec(directory, sig, cb);
+	return SigSec(directory, sig, cb, lpParam);
 }
 
-bool CMemoryModule::SigSec(eSection directory, const std::function<void(CSigHandle &)> &cb)
+bool CMemoryModule::SigSec(eSection directory, SigCallbackFn cb, void *lpParam)
 {
 	auto [ptr, size] = GetSectionInfo(directory);
 	if (!ptr)
 		return false;
 
 	CSigHandle sig(ptr, PtrOffset(ptr, size - 1));
-	cb(sig);
+	cb(sig, lpParam);
 
 	return true;
 }
 
-std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromLibrary(const std::string_view &libname, size_t size)
+std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromLibrary(const char *libname, size_t size)
 {
 	HMODULE handle;
 
-	if (libname.empty())
+	if (!libname || !*libname)
 		handle = GetModuleHandleA(0);
 	else
-		handle = GetModuleHandleA(libname.data());
+		handle = GetModuleHandleA(libname);
 
 	if (handle == 0)
 		return {};
@@ -285,3 +287,5 @@ std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromAddress(std::nullptr_t)
 }
 
 MEMORIA_END
+
+#endif

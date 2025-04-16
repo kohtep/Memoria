@@ -1,11 +1,16 @@
 #include "memoria_ext_patch.hpp"
 
+#ifndef MEMORIA_DISABLE_EXT_PATCH
+
 #include <Windows.h>
-#include <assert.h>
+#include <string_view>
 
 #include "memoria_core_debug.hpp"
 #include "memoria_core_write.hpp"
 #include "memoria_core_misc.hpp"
+
+#include "memoria_utils_assert.hpp"
+#include "memoria_utils_string.hpp"
 
 MEMORIA_BEGIN
 
@@ -25,9 +30,9 @@ bool CPatch::IsValid() const
 	bool equal;
 
 	if (_active)
-		equal = std::memcmp(_dest_address, _data_patch.data(), _data_patch.size()) == 0;
+		equal = CompareMemory(_dest_address, _data_patch.data(), _data_patch.size()) == 0;
 	else
-		equal = std::memcmp(_dest_address, _data_origin.data(), _data_origin.size()) == 0;
+		equal = CompareMemory(_dest_address, _data_origin.data(), _data_origin.size()) == 0;
 
 	return equal;
 }
@@ -80,15 +85,15 @@ CPatch::CPatch(void *dest_address, const void *source_address, size_t size, bool
 	, _active(false)
 	, _stack_backtrace(GetStackBacktrace())
 {
-	assert(dest_address && source_address && size);
+	Assert(dest_address && source_address && size);
 
 	if (dest_address && source_address && size > 0)
 	{
 		_data_origin.resize(size);
 		_data_patch.resize(size);
 
-		std::memcpy(_data_origin.data(), dest_address, size);
-		std::memcpy(_data_patch.data(), source_address, size);
+		CopyMemory(_data_origin.data(), dest_address, size);
+		CopyMemory(_data_patch.data(), source_address, size);
 	}
 	else
 	{
@@ -116,12 +121,16 @@ CPatch::~CPatch()
 
 	_stack_backtrace.clear();
 
-	auto it = std::find(GetPatches().begin(), GetPatches().end(), this);
+	auto &patches = GetPatches();
 
-	assert(it != GetPatches().end());
-
-	if (it != GetPatches().end())
-		GetPatches().erase(it);
+	for (auto it = patches.begin(); it != patches.end(); ++it)
+	{
+		if (*it == this)
+		{
+			patches.erase(it);
+			break;
+		}
+	}
 }
 
 CPatch *PatchU8(void *addr, uint8_t value, bool instant_deploy, ptrdiff_t offset)
@@ -224,16 +233,24 @@ CPatch *PatchRelative(void *addr, const void *value, bool instant_deploy, ptrdif
 	return new CPatch(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset), &rel, sizeof(rel), instant_deploy);
 }
 
-CPatch *PatchAStr(void *addr, const std::string_view &value, bool instant_deploy, ptrdiff_t offset)
+CPatch *PatchAStr(void *addr, const char *value, bool instant_deploy, ptrdiff_t offset)
 {
-	return new CPatch(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset), value.data(), 
-		(value.size() + sizeof(value[0])) * sizeof(value[0]), instant_deploy);
+	if (!value)
+		return nullptr;
+
+	size_t len = StrLenA(value);
+	return new CPatch(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset), value,
+		(len + 1) * sizeof(char), instant_deploy);
 }
 
-CPatch *PatchWStr(void *addr, const std::wstring_view &value, bool instant_deploy, ptrdiff_t offset)
+CPatch *PatchWStr(void *addr, const wchar_t *value, bool instant_deploy, ptrdiff_t offset)
 {
-	return new CPatch(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset), value.data(),
-		(value.size() + sizeof(value[0])) * sizeof(value[0]), instant_deploy);
+	if (!value)
+		return nullptr;
+
+	size_t len = StrLenW(value);
+	return new CPatch(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset), value,
+		(len + 1) * sizeof(wchar_t), instant_deploy);
 }
 
 bool FreePatch(CPatch *patch)
@@ -252,8 +269,10 @@ bool FreeAllPatches()
 		delete patch;
 	}
 
-	assert(CPatch::GetPatches().empty());
+	Assert(CPatch::GetPatches().empty());
 	return true;
 }
 
 MEMORIA_END
+
+#endif

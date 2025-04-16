@@ -1,9 +1,9 @@
 #pragma once
 
 #include "memoria_common.hpp"
+#include "memoria_utils_vector.hpp"
 
 #include <stdint.h>
-#include <string_view>
 #include <vector>
 #include <memory>
 
@@ -22,13 +22,13 @@ private:
 	//
 	// In general, this issue could be resolved using '/Zc:threadSafeInit-' (for MSVC),
 	// but I would prefer not to make such a global change just for a single container.
-	static inline std::vector<CPatch *> *_patches;
+	static inline Memoria::Vector<CPatch *> *_patches;
 
-	static std::vector<CPatch *> &GetPatches()
+	static Memoria::Vector<CPatch *> &GetPatches()
 	{
 		if (!_patches)
 		{
-			_patches = new std::vector<CPatch *>();
+			_patches = new Memoria::Vector<CPatch *>();
 			std::atexit([]() { delete _patches; });
 		}
 
@@ -40,10 +40,10 @@ private:
 private:
 	void *_dest_address;
 
-	std::vector<uint8_t> _data_origin;
-	std::vector<uint8_t> _data_patch;
+	Memoria::Vector<uint8_t> _data_origin;
+	Memoria::Vector<uint8_t> _data_patch;
 
-	std::vector<void *> _stack_backtrace;
+	Memoria::Vector<void *> _stack_backtrace;
 	bool _active;
 
 	void Toggle(bool state);
@@ -83,8 +83,8 @@ extern CPatch *PatchDouble(void *addr, double value, bool instant_deploy = true,
 extern CPatch *PatchPointer(void *addr, const void *value, bool instant_deploy = true, ptrdiff_t offset = 0);
 extern CPatch *PatchRelative(void *addr, const void *value, bool instant_deploy = true, ptrdiff_t offset = 0);
 
-extern CPatch *PatchAStr(void *addr, const std::string_view &value, bool instant_deploy = true, ptrdiff_t offset = 0);
-extern CPatch *PatchWStr(void *addr, const std::wstring_view &value, bool instant_deploy = true, ptrdiff_t offset = 0);
+extern CPatch *PatchAStr(void *addr, const char *value, bool instant_deploy = true, ptrdiff_t offset = 0);
+extern CPatch *PatchWStr(void *addr, const wchar_t *value, bool instant_deploy = true, ptrdiff_t offset = 0);
 
 extern bool FreePatch(CPatch *patch);
 extern bool FreeAllPatches();
