@@ -100,13 +100,13 @@ private:
 	CHookMgr &operator=(const CHookMgr &) = delete;
 
 private:
-	void *_data;
+	void *_data = nullptr;
 
-	size_t _hooks;
-	size_t _max_hooks;
+	size_t _hooks = 0;
+	size_t _max_hooks = 0;
 
 public:
-	CHookMgr() = delete;
+	CHookMgr() = default;
 	CHookMgr(const void *addr_nearest, size_t max_hooks = 64);
 	~CHookMgr();
 

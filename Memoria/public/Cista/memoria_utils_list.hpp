@@ -48,13 +48,13 @@ private:
 
     Node *create_node()
     {
-        return static_cast<Node *>(Memoria::New(sizeof(Node)));
+        return static_cast<Node *>(::operator new(sizeof(Node)));
     }
 
     void destroy_node(Node *node)
     {
         std::destroy_at(node);
-        Memoria::Free(node);
+        ::operator delete(node);
     }
 
 public:

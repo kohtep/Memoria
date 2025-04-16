@@ -43,7 +43,7 @@ public:
         if (count == 0)
             return;
 
-        _data = static_cast<T *>(Memoria::New(count * sizeof(T)));
+        _data = static_cast<T *>(::operator new(count * sizeof(T)));
         _capacity = count;
         for (size_t i = 0; i < count; ++i)
         {
@@ -55,7 +55,7 @@ public:
     ~Vector()
     {
         clear();
-        Memoria::Free(_data);
+        ::operator delete(_data);
     }
 
     void push_back(const T &value)
@@ -220,7 +220,7 @@ public:
         if (new_capacity <= _capacity)
             return;
 
-        T *new_data = static_cast<T *>(Memoria::New(new_capacity * sizeof(T)));
+        T *new_data = static_cast<T *>(::operator new(new_capacity * sizeof(T)));
 
         for (size_t i = 0; i < _size; ++i)
         {
@@ -228,7 +228,7 @@ public:
             std::destroy_at(_data + i);
         }
 
-        Memoria::Free(_data);
+        ::operator delete(_data);
         _data = new_data;
         _capacity = new_capacity;
     }

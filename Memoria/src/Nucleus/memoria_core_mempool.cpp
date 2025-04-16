@@ -20,7 +20,7 @@ public:
 	void *_chunk = nullptr;
 
 public:
-	CMemoryChunk() = delete;
+	CMemoryChunk() = default;
 	CMemoryChunk(void *chunk, bool is_virtual) : _chunk(chunk), _is_virtual(is_virtual) {}
 
 	~CMemoryChunk()
