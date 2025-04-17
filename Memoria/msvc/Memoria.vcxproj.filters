@@ -111,6 +111,12 @@
     <ClCompile Include="..\..\vendor\hde\src\hde32.c">
       <Filter>vendor\hde\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\Cista\memoria_utils_assert.cpp">
+      <Filter>src\Cista</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Cista\memoria_utils_string.cpp">
+      <Filter>src\Cista</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\public\Cista\memoria_utils_buffer.hpp">
@@ -199,6 +205,21 @@
     </ClInclude>
     <ClInclude Include="..\..\vendor\hde\public\hde64.h">
       <Filter>vendor\hde\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Cista\memoria_utils_list.hpp">
+      <Filter>public\Cista</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Cista\memoria_utils_optional.hpp">
+      <Filter>public\Cista</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Cista\memoria_utils_string.hpp">
+      <Filter>public\Cista</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Cista\memoria_utils_vector.hpp">
+      <Filter>public\Cista</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\Cista\memoria_utils_assert.hpp">
+      <Filter>public\Cista</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

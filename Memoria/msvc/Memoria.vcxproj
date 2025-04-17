@@ -167,7 +167,9 @@
     <ClCompile Include="..\src\Captura\memoria_captura_hook32.cpp" />
     <ClCompile Include="..\src\Captura\memoria_captura_hook64.cpp" />
     <ClCompile Include="..\src\Captura\memoria_captura_trampoline.cpp" />
+    <ClCompile Include="..\src\Cista\memoria_utils_assert.cpp" />
     <ClCompile Include="..\src\Cista\memoria_utils_buffer.cpp" />
+    <ClCompile Include="..\src\Cista\memoria_utils_string.cpp" />
     <ClCompile Include="..\src\Nucleus\memoria_common.cpp" />
     <ClCompile Include="..\src\Nucleus\memoria_core_check.cpp" />
     <ClCompile Include="..\src\Nucleus\memoria_core_debug.cpp" />
@@ -196,7 +198,12 @@
     <ClInclude Include="..\public\Captura\memoria_captura_hook32.hpp" />
     <ClInclude Include="..\public\Captura\memoria_captura_hook64.hpp" />
     <ClInclude Include="..\public\Captura\memoria_captura_trampoline.hpp" />
+    <ClInclude Include="..\public\Cista\memoria_utils_assert.hpp" />
     <ClInclude Include="..\public\Cista\memoria_utils_buffer.hpp" />
+    <ClInclude Include="..\public\Cista\memoria_utils_list.hpp" />
+    <ClInclude Include="..\public\Cista\memoria_utils_optional.hpp" />
+    <ClInclude Include="..\public\Cista\memoria_utils_string.hpp" />
+    <ClInclude Include="..\public\Cista\memoria_utils_vector.hpp" />
     <ClInclude Include="..\public\Nucleus\memoria_amalgamation.hpp" />
     <ClInclude Include="..\public\Nucleus\memoria_common.hpp" />
     <ClInclude Include="..\public\Nucleus\memoria_core_check.hpp" />
