@@ -389,7 +389,7 @@ bool BeautifyPointer(const void *addr, char *out, size_t max_size)
 
 size_t Align(size_t value, int alignment)
 {
-	//assert(alignment != 0);
+	//Assert(alignment != 0);
 
 	if (alignment == 0)
 		return value;
@@ -490,7 +490,7 @@ HMODULE GetModuleHandleDirect(fnv1a_t module_name_hash)
 #elif _WIN32
 	PPEB pPeb = (PPEB)__readfsdword(0x30);
 #else
-	assert(false);
+	Assert(false);
 	return 0;
 #endif
 

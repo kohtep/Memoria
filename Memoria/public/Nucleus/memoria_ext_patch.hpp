@@ -4,7 +4,6 @@
 #include "memoria_utils_vector.hpp"
 
 #include <stdint.h>
-#include <vector>
 #include <memory>
 
 MEMORIA_BEGIN

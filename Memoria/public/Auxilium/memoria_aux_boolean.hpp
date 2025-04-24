@@ -56,7 +56,7 @@ public:
     Boolean operator>>(int) const = delete;
 };
 
-static_assert(sizeof(Boolean) == sizeof(bool));
+static_Assert(sizeof(Boolean) == sizeof(bool));
 
 MEMORIA_END
 

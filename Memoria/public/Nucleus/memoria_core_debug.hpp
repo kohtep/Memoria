@@ -93,4 +93,6 @@ extern __declspec(noinline) Memoria::Vector<void *> GetStackBacktrace();
 
 extern void *GetImageDirectoryData(void *base, bool image, uint16_t dir, uint32_t *size);
 
+
+
 MEMORIA_END

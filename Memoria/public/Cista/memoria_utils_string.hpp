@@ -150,3 +150,9 @@ MEMORIA_END
 
 // sprintf
 #define FormatBuf(buffer, fmt, ...) Memoria::FormatBufSafe(buffer, static_cast<size_t>(-1), fmt, __VA_ARGS__)
+
+MEMORIA_BEGIN
+
+
+
+MEMORIA_END
