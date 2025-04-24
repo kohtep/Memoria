@@ -105,6 +105,30 @@ int main()
 }
 ```
 
+> Demonstration of quick deployment of logging to the system console
+```cpp
+#include "memoria_ext_logger.hpp"
+#include "memoria_utils_assert.hpp"
+
+int main()
+{
+	if (!AssertMsgIf(Memoria::InitializeConsoleLogging(), "Failed to initialize console logging."))
+	{
+		return EXIT_FAILURE;
+	}
+
+	LOG("Application started (PID: %d)", GetCurrentProcessId());
+
+	LOG_DBG("Debug logging is enabled.");
+	LOG_DBG("Performing internal diagnostics: value = %d", 42);
+	LOG_DBG("Shutting down subsystems...");
+
+	Memoria::FinalizeConsoleLogging();
+
+	return EXIT_SUCCESS;
+}
+```
+
 ## License
 
 This product is distributed under the 2-Clause BSD License.

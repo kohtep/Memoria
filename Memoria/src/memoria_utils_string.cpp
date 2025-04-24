@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 
+#include "memoria_utils_assert.hpp"
+
 MEMORIA_BEGIN
 
 char *FindCharA(const char *lpString, int ch)
@@ -602,13 +604,15 @@ int FormatBufSafeV(char *lpBuffer, size_t dwMaxSize, const char *lpFormat, va_li
 			{
 				double val = va_arg(args, double);
 				char temp[64];
-				int len = DoubleToStr(temp, val, 6); // 6 знаков после запятой
+				int len = DoubleToStr(temp, val, 6);
 				for (int i = 0; i < len && remaining > 0; ++i, --remaining)
 					*pOut++ = temp[i];
 				break;
 			}
 
 			default:
+				AssertMsg(false, "Unknown format specifier: '%%%c'", *lpFormat);
+
 				if (remaining > 0) { *pOut++ = '%'; --remaining; }
 				if (remaining > 0) { *pOut++ = *lpFormat; --remaining; }
 				break;

@@ -99,6 +99,9 @@
     <ClCompile Include="..\src\memoria_core_options.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\memoria_ext_logger.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\vendor\hde\public\table32.h">
@@ -201,6 +204,9 @@
       <Filter>public</Filter>
     </ClInclude>
     <ClInclude Include="..\public\memoria_captura_trampoline.hpp">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\memoria_ext_logger.hpp">
       <Filter>public</Filter>
     </ClInclude>
   </ItemGroup>

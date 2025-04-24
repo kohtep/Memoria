@@ -181,6 +181,7 @@
     <ClCompile Include="..\src\memoria_core_windows.cpp" />
     <ClCompile Include="..\src\memoria_core_write.cpp" />
     <ClCompile Include="..\src\memoria_ext_hook.cpp" />
+    <ClCompile Include="..\src\memoria_ext_logger.cpp" />
     <ClCompile Include="..\src\memoria_ext_module.cpp" />
     <ClCompile Include="..\src\memoria_ext_patch.cpp" />
     <ClCompile Include="..\src\memoria_ext_sig.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="..\public\memoria_core_windows.hpp" />
     <ClInclude Include="..\public\memoria_core_write.hpp" />
     <ClInclude Include="..\public\memoria_ext_hook.hpp" />
+    <ClInclude Include="..\public\memoria_ext_logger.hpp" />
     <ClInclude Include="..\public\memoria_ext_module.hpp" />
     <ClInclude Include="..\public\memoria_ext_patch.hpp" />
     <ClInclude Include="..\public\memoria_ext_sig.hpp" />
