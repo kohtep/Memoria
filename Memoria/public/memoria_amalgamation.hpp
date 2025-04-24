@@ -19,10 +19,10 @@
 #include "memoria_ext_patch.hpp"
 #include "memoria_ext_sig.hpp"
 
-#include "../Cista/memoria_utils_buffer.hpp"
+#include "memoria_utils_buffer.hpp"
 
-#include "../Captura/memoria_captura_common.hpp"
-#include "../Captura/memoria_captura_function.hpp"
-#include "../Captura/memoria_captura_hook32.hpp"
-#include "../Captura/memoria_captura_hook64.hpp"
-#include "../Captura/memoria_captura_trampoline.hpp"
+#include "memoria_captura_common.hpp"
+#include "memoria_captura_function.hpp"
+#include "memoria_captura_hook32.hpp"
+#include "memoria_captura_hook64.hpp"
+#include "memoria_captura_trampoline.hpp"
