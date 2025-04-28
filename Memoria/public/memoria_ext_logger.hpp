@@ -30,12 +30,12 @@ MEMORIA_END
 
 #ifdef _DEBUG
 
-#define LOG_DBG(fmt, ...) DispatchLog(fmt, __VA_ARGS__)
-#define LOG(fmt, ...)	  DispatchLog(fmt, __VA_ARGS__)
+#define LOG_DBG(fmt, ...) Memoria::DispatchLog(fmt, __VA_ARGS__)
+#define LOG(fmt, ...)	  Memoria::DispatchLog(fmt, __VA_ARGS__)
 
 #else
 
 #define LOG_DBG(fmt, ...) ((void)0)
-#define LOG(fmt, ...)	  DispatchLog(fmt, __VA_ARGS__)
+#define LOG(fmt, ...)	  Memoria::DispatchLog(fmt, __VA_ARGS__)
 
 #endif

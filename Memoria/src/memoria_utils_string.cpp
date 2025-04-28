@@ -90,7 +90,8 @@ void *MoveMemory(void *lpDestination, const void *lpSource, size_t dwSize)
 
 void *FillMemory(void *lpDestination, int nValue, size_t dwSize)
 {
-	unsigned char *dest = static_cast<unsigned char *>(lpDestination);
+	// `volatile` helps prevent insertion of a `memset` call from the CRT library.
+	volatile unsigned char *dest = static_cast<unsigned char *>(lpDestination);
 
 	for (size_t i = 0; i < dwSize; ++i)
 	{

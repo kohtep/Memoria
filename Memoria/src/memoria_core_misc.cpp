@@ -422,6 +422,11 @@ void *GetSelfAddress()
 	return GetBaseAddress(_ReturnAddress());
 }
 
+HMODULE GetSelfHandle()
+{
+	return reinterpret_cast<HMODULE>(GetSelfAddress());
+}
+
 DWORD BeginThread(void (*fnFunction)(LPVOID), LPVOID param)
 {
 	DWORD nThreadId;

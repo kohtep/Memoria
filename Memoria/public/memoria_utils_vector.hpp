@@ -49,6 +49,7 @@ public:
 	using const_iterator = const T *;
 
 	using predicate_t = bool(*)(const T &value, void *context);
+	using compare_t = int(*)(const T &a, const T &b, void *context);
 
 	constexpr VectorBase() = default;
 
@@ -292,6 +293,23 @@ public:
 		}
 		return end();
 	}
+
+	void sort(compare_t cmp, void *context = nullptr)
+	{
+		for (size_t i = 1; i < _size; ++i)
+		{
+			T temp = std::move(_data[i]);
+			size_t j = i;
+
+			while (j > 0 && cmp(temp, _data[j - 1], context) < 0)
+			{
+				_data[j] = std::move(_data[j - 1]);
+				--j;
+			}
+
+			_data[j] = std::move(temp);
+		}
+	}
 };
 
 //
@@ -401,7 +419,7 @@ template<typename T, size_t MaxItems>
 class InlineVector : public VectorBase<T>
 {
 private:
-	T _container[MaxItems];
+	T _container[MaxItems]{};
 
 	static void on_ensure_capacity(void *obj, size_t min_capacity)
 	{
@@ -414,7 +432,7 @@ public:
 		this->_data = _container;
 		this->_size = 0;
 		this->_capacity = MaxItems;
-
+	
 		this->_on_ensure_capacity = on_ensure_capacity;
 	}
 };

@@ -209,6 +209,8 @@ extern void *GetBaseAddress(const void *addr);
  */
 extern __declspec(noinline) void *GetSelfAddress();
 
+extern __declspec(noinline) HMODULE GetSelfHandle();
+
 /**
  * @brief
  *

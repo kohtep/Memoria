@@ -112,6 +112,7 @@ public:
 	// Static builders
 	//
 
+	static std::unique_ptr<CMemoryModule> CreateFromExecutable();
 	static std::unique_ptr<CMemoryModule> CreateFromLibrary(const char *libname, size_t size = 0);
 	static std::unique_ptr<CMemoryModule> CreateFromHandle(HMODULE handle, size_t size = 0);
 	static std::unique_ptr<CMemoryModule> CreateFromAddress(const void *address, size_t size = 0);

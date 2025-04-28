@@ -270,6 +270,56 @@ DWORD GetModuleSize(HMODULE handle)
 	return nt->OptionalHeader.SizeOfImage;
 }
 
+Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle)
+{
+	Memoria::Vector<ExportFunc_t> exports;
+
+	if (!handle)
+		handle = GetModuleHandleA(0);
+
+	if (!handle)
+		return exports;
+
+	BYTE *base = reinterpret_cast<BYTE *>(handle);
+	IMAGE_DOS_HEADER *dosHeader = reinterpret_cast<IMAGE_DOS_HEADER *>(base);
+	if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+		return exports;
+
+	IMAGE_NT_HEADERS *ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS *>(base + dosHeader->e_lfanew);
+	if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
+		return exports;
+
+	DWORD exportDirRVA = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+	if (!exportDirRVA)
+		return exports;
+
+	IMAGE_EXPORT_DIRECTORY *exportDir = reinterpret_cast<IMAGE_EXPORT_DIRECTORY *>(base + exportDirRVA);
+
+	DWORD *functions = reinterpret_cast<DWORD *>(base + exportDir->AddressOfFunctions);
+	DWORD *names = reinterpret_cast<DWORD *>(base + exportDir->AddressOfNames);
+	WORD *ordinals = reinterpret_cast<WORD *>(base + exportDir->AddressOfNameOrdinals);
+
+	for (DWORD i = 0; i < exportDir->NumberOfFunctions; ++i)
+	{
+		ExportFunc_t func = {};
+		func.Address = reinterpret_cast<void *>(base + functions[i]);
+
+		for (DWORD j = 0; j < exportDir->NumberOfNames; ++j)
+		{
+			if (ordinals[j] == i)
+			{
+				func.Name = reinterpret_cast<const char *>(base + names[j]);
+				break;
+			}
+		}
+
+		func.Ordinal = static_cast<WORD>(exportDir->Base + i);
+		exports.push_back(func);
+	}
+
+	return exports;
+}
+
 MEMORIA_END
 
 #endif

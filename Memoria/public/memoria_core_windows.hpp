@@ -2,6 +2,8 @@
 
 #include "memoria_common.hpp"
 
+#include "memoria_utils_vector.hpp"
+
 #include <stdint.h>
 #include <Windows.h>
 #include <utility>
@@ -118,5 +120,14 @@ extern std::pair<WORD, WORD> GetModuleVersion(const char *name);
  * @return
  */
 extern DWORD GetModuleSize(HMODULE handle);
+
+struct ExportFunc_t
+{
+    void *Address;
+    const char *Name;
+    WORD Ordinal;
+};
+
+extern Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle);
 
 MEMORIA_END

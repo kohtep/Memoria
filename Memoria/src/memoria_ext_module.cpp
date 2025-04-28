@@ -244,6 +244,11 @@ bool CMemoryModule::SigSec(eSection directory, SigCallbackFn cb, void *lpParam)
 	return true;
 }
 
+std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromExecutable()
+{
+	return CreateFromHandle(NULL, 0);
+}
+
 std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromLibrary(const char *libname, size_t size)
 {
 	HMODULE handle;
