@@ -40,7 +40,7 @@ CTrampoline::CTrampoline(CHookMgr *manager, void *target, const void *hook, bool
 	buf.WriteU8(0xE9);
 	buf.WriteRelative(_hook, GetJmpHook());
 
-	CopyMemory(GetOriginal(), target, size);
+	MemCopy(GetOriginal(), target, size);
 
 	auto _backup_new = PtrOffset(GetOriginal(), size);
 	auto _target_new = PtrOffset(target, size);
@@ -56,7 +56,7 @@ CTrampoline::~CTrampoline()
 
 bool CTrampoline::IsActive()
 {
-	return CompareMemory(_pointer, const_cast<const void *>(GetOriginal()), _size) != 0;
+	return MemCompare(_pointer, const_cast<const void *>(GetOriginal()), _size) != 0;
 }
 
 bool CTrampoline::Hook()

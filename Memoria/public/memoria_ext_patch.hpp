@@ -8,44 +8,39 @@
 
 MEMORIA_BEGIN
 
+//
+// Macros to serve as a reminder that the project should be rewritten for C99 compliance in the future.
+//
+
+#define MAX_PATCHES_COUNT 128
+#define MAX_PATCH_SIZE 128
+
+//
+// Holder of patch information.
+//
+// The absence of a destructor here is intentional. 
+// Please do not forget to call `Memoria::Cleanup` or `Memoria::FreePatches`.
+//
 class CPatch
 {
 private:
 	CPatch(const CPatch &) = delete;
 	CPatch &operator=(const CPatch &) = delete;
 
-	// The '_patches' variable is intentionally declared outside of 'GetPatches',
-	// because all static variables by default behave as TLS (Thread-Local Storage)
-	// to ensure thread safety. I did not want each thread to have its own instance
-	// of the patch container, so I moved the variable out and made it 'static inline'.
-	//
-	// In general, this issue could be resolved using '/Zc:threadSafeInit-' (for MSVC),
-	// but I would prefer not to make such a global change just for a single container.
-	static inline Memoria::Vector<CPatch *> *_patches;
-
-	static Memoria::Vector<CPatch *> &GetPatches()
-	{
-		if (!_patches)
-		{
-			_patches = new Memoria::Vector<CPatch *>();
-			std::atexit([]() { delete _patches; });
-		}
-
-		return *_patches;
-	}
-
-	friend extern bool FreeAllPatches();
-
 private:
-	void *_dest_address;
+	void *_dest_address = nullptr;
+	bool _active = false;
 
-	Memoria::Vector<uint8_t> _data_origin;
-	Memoria::Vector<uint8_t> _data_patch;
+	Memoria::FixedVector<uint8_t, MAX_PATCH_SIZE> _data_origin{};
+	Memoria::FixedVector<uint8_t, MAX_PATCH_SIZE> _data_patch{};
 
-	Memoria::Vector<void *> _stack_backtrace;
-	bool _active;
+#ifdef _DEBUG
+	// Introduces significant overhead to the object size. 
+	// It is better to avoid using it in release configurations 
+	// to maintain a smaller binary size.
 
-	void Toggle(bool state);
+	Memoria::FixedVector<void *, 128> _stack_backtrace{};
+#endif
 
 public:
 	bool IsActive() const;
@@ -53,14 +48,15 @@ public:
 
 	void Apply();
 	void Restore();
+	void Toggle(bool state);
 
 	void *GetAddress() const { return _dest_address; }
 
 	const auto &GetDataOrigin() const { return _data_origin; }
 	const auto &GetDataPatch() const { return _data_patch; }
 
+	CPatch() = default;
 	CPatch(void *dest_address, const void *source_address, size_t size, bool instant_deploy);
-	~CPatch();
 };
 
 extern CPatch *PatchU8(void *addr, uint8_t value, bool instant_deploy = true, ptrdiff_t offset = 0);
@@ -85,7 +81,7 @@ extern CPatch *PatchRelative(void *addr, const void *value, bool instant_deploy 
 extern CPatch *PatchAStr(void *addr, const char *value, bool instant_deploy = true, ptrdiff_t offset = 0);
 extern CPatch *PatchWStr(void *addr, const wchar_t *value, bool instant_deploy = true, ptrdiff_t offset = 0);
 
-extern bool FreePatch(CPatch *patch);
-extern bool FreeAllPatches();
+extern Memoria::FixedVector<CPatch, MAX_PATCHES_COUNT> &GetPatches();
+extern bool FreePatches();
 
 MEMORIA_END

@@ -28,14 +28,24 @@ extern void DispatchLog(const char *fmt, ...);
 
 MEMORIA_END
 
+#ifndef MEMORIA_LOG_PREFIX
+#define MEMORIA_LOG_PREFIX ""
+#endif
+
+#ifndef MEMORIA_LOG_WRAP
+#define MEMORIA_LOG_WRAP(msg) msg
+#endif
+
+#define MEMORIA_LOG_FORMAT(fmt) MEMORIA_LOG_WRAP(MEMORIA_LOG_PREFIX fmt)
+
 #ifdef _DEBUG
 
-#define LOG_DBG(fmt, ...) Memoria::DispatchLog(fmt, __VA_ARGS__)
-#define LOG(fmt, ...)	  Memoria::DispatchLog(fmt, __VA_ARGS__)
+#define LOG_DBG(fmt, ...) Memoria::DispatchLog(MEMORIA_LOG_FORMAT(fmt), __VA_ARGS__)
+#define LOG(fmt, ...)     Memoria::DispatchLog(MEMORIA_LOG_FORMAT(fmt), __VA_ARGS__)
 
 #else
 
 #define LOG_DBG(fmt, ...) ((void)0)
-#define LOG(fmt, ...)	  Memoria::DispatchLog(fmt, __VA_ARGS__)
+#define LOG(fmt, ...)     Memoria::DispatchLog(MEMORIA_LOG_FORMAT(fmt), __VA_ARGS__)
 
 #endif

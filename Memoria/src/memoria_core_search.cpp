@@ -16,7 +16,7 @@ using FindMemoryCmp_t = bool(*)(const void *addr1, const void *addr2, size_t siz
 
 static bool FindMemoryCmp(const void *addr1, const void *addr2, size_t size, void *param)
 {
-	return CompareMemory(addr1, addr2, size) == 0;
+	return MemCompare(addr1, addr2, size) == 0;
 }
 
 void *FindMemory(const void *addr_start, const void *addr_min, const void *addr_max, const void *data, size_t size, bool backward, 
@@ -362,7 +362,7 @@ void *FindRelative(const void *addr_start, const void *addr_min, const void *add
 		if (!IsInBounds(result, addr_min, addr_max))
 			return nullptr;
 
-		FillMemory(&hs, 0, sizeof(hde64s));
+		MemFill(&hs, 0, sizeof(hde64s));
 		hde64_disasm(result, &hs);
 
 		if (hs.flags & F_RELATIVE)

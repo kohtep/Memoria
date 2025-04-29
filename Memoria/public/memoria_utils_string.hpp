@@ -19,10 +19,6 @@
 
 MEMORIA_BEGIN
 
-#undef CopyMemory
-#undef MoveMemory
-#undef FillMemory
-
 // strchr
 extern char *FindCharA(const char *lpString, int ch);
 
@@ -30,16 +26,16 @@ extern char *FindCharA(const char *lpString, int ch);
 extern char *FindLastCharA(const char *lpString, int ch);
 
 // memcmp
-extern int CompareMemory(const void *lpBlock1, const void *lpBlock2, size_t dwSize);
+extern int MemCompare(const void *lpBlock1, const void *lpBlock2, size_t dwSize);
 
 // memcpy
-extern void *CopyMemory(void *lpDestination, const void *lpSource, size_t dwSize);
+extern void *MemCopy(void *lpDestination, const void *lpSource, size_t dwSize);
 
 // memmove
-extern void *MoveMemory(void *lpDestination, const void *lpSource, size_t dwSize);
+extern void *MemMove(void *lpDestination, const void *lpSource, size_t dwSize);
 
 // memset
-extern void *FillMemory(void *lpDestination, int nValue, size_t dwSize);
+extern void *MemFill(void *lpDestination, int nValue, size_t dwSize);
 
 // strcpy (Ansi)
 extern char *StrCopyA(char *lpDest, const char *lpSrc);
@@ -134,11 +130,16 @@ extern int UInt64ToHex(char *lpBuffer, unsigned long long uValue, bool uppercase
 // std::to_string(double)
 extern int DoubleToStr(char *lpBuffer, double fValue, int nPrecision);
 
+// std::to_string(long double)
+extern int LongDoubleToStr(char *lpBuffer, long double value, int precision);
+
 // std::isnan
 extern bool IsNan(double val);
+extern bool IsNan(long double val);
 
 // std::isinf
 extern bool IsInf(double val);
+extern bool IsInf(long double val);
 
 // strlen
 extern size_t StrLenA(const char *lpString);

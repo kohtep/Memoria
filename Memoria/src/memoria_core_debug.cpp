@@ -158,7 +158,7 @@ static bool SymInit()
 	SymInited = SymInitializeWrap(GetCurrentProcess(), NULL, TRUE);
 
 	if (SymInited.value())
-		atexit(SymShutdown);
+		RegisterOnExitCallback(SymShutdown);
 
 	return SymInited.value();
 }
@@ -304,9 +304,9 @@ void *GetFunctionBaseAddressFromItsCode(const void *address)
 	return nullptr;
 }
 
-Memoria::Vector<void *> GetStackBacktrace()
+Memoria::FixedVector<void *, 128> GetStackBacktrace()
 {
-	Memoria::Vector<void *> result{};
+	Memoria::FixedVector<void *, 128> result{};
 
 	void *callers[128];
 	int count = RtlCaptureStackBackTrace(2, _countof(callers), callers, NULL);

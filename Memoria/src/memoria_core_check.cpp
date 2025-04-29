@@ -29,7 +29,7 @@ bool CheckMemory(const void *addr, const void *value, size_t size, ptrdiff_t off
 		}
 	}
 
-	return CompareMemory(PtrOffset(addr, offset), value, size) == 0;
+	return MemCompare(PtrOffset(addr, offset), value, size) == 0;
 }
 
 bool CheckU8(const void *addr, uint8_t value, ptrdiff_t offset)

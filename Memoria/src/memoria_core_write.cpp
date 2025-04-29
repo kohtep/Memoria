@@ -39,11 +39,11 @@ bool WriteMemory(void *addr, const void *data, size_t size, ptrdiff_t offset, bo
 
 	if (use_setmem)
 	{
-		FillMemory(addr, static_cast<int>(*static_cast<const uint8_t *>(data)), size);
+		MemFill(addr, static_cast<int>(*static_cast<const uint8_t *>(data)), size);
 	}
 	else
 	{
-		CopyMemory(addr, data, size);
+		MemCopy(addr, data, size);
 	}
 
 	if (!VirtualProtect(addr, size, old_protection, &old_protection))

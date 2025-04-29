@@ -188,7 +188,7 @@ bool GetMemoryBlock(const void *source, size_t size, void *dest)
 	if (source == nullptr || dest == nullptr)
 		return false;
 
-	CopyMemory(dest, source, size);
+	MemCopy(dest, source, size);
 	return true;
 }
 
@@ -207,7 +207,7 @@ Memoria::Vector<uint8_t> GetMemoryData(const void *source, size_t size)
 	Memoria::Vector<uint8_t> data(size);
 
 	if (source != nullptr)
-		CopyMemory(data.data(), source, size);
+		MemCopy(data.data(), source, size);
 
 	return data;
 }

@@ -11,8 +11,6 @@
 
 MEMORIA_BEGIN
 
-class CPatch;
-
 class CMemoryBlock
 {
 protected:
@@ -27,8 +25,6 @@ protected:
 
 	const void *_address = {};
 	size_t _size = {};
-
-	Memoria::List<CPatch *> _patches = {};
 
 public:
 	CMemoryBlock() = default;

@@ -31,7 +31,7 @@ CShadowVTable::CShadowVTable(void *instance, size_t methodCount)
 
 	_vmt_shadow = std::make_unique<void *[]>(methodCount);
 
-	CopyMemory(_vmt_shadow.get(), _vmt_org, methodCount * sizeof(void *));
+	MemCopy(_vmt_shadow.get(), _vmt_org, methodCount * sizeof(void *));
 
 	new (&_vmt_original) CVTable(instance);
 

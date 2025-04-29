@@ -107,7 +107,7 @@ bool CSignature::Match(const void *addr) const
 
 	if (!_has_optionals)
 	{
-		return CompareMemory(data, _payload.data(), _payload.size()) == 0;
+		return MemCompare(data, _payload.data(), _payload.size()) == 0;
 	}
 	else
 	{

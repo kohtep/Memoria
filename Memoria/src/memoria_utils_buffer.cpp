@@ -47,7 +47,7 @@ bool CBuffer::Clone(void *dest, bool is_code, ptrdiff_t offset)
 	}
 	else
 	{
-		CopyMemory(PtrOffset(dest, offset), _data, _pos);
+		MemCopy(PtrOffset(dest, offset), _data, _pos);
 		return true;
 	}
 }
@@ -134,7 +134,7 @@ void CWriteBuffer::WriteData(const void *src, size_t size)
 	if (_pos + size > _size)
 		return;
 
-	CopyMemory(&_data[_pos], src, size);
+	MemCopy(&_data[_pos], src, size);
 	_pos += size;
 }
 
@@ -149,7 +149,7 @@ uint16_t CReadBuffer::ReadU16()
 		return 0;
 
 	uint16_t value;
-	CopyMemory(&value, &_data[_pos], sizeof(value));
+	MemCopy(&value, &_data[_pos], sizeof(value));
 	_pos += 2;
 
 	return value;
@@ -161,7 +161,7 @@ uint32_t CReadBuffer::ReadU32()
 		return 0;
 
 	uint32_t value;
-	CopyMemory(&value, &_data[_pos], sizeof(value));
+	MemCopy(&value, &_data[_pos], sizeof(value));
 	_pos += 4;
 
 	return value;
@@ -173,7 +173,7 @@ uint64_t CReadBuffer::ReadU64()
 		return 0;
 
 	uint64_t value;
-	CopyMemory(&value, &_data[_pos], sizeof(value));
+	MemCopy(&value, &_data[_pos], sizeof(value));
 	_pos += 8;
 
 	return value;
@@ -220,7 +220,7 @@ void CReadBuffer::ReadData(void *dest, size_t size)
 	if (_pos + size > _size)
 		return;
 
-	CopyMemory(dest, &_data[_pos], size);
+	MemCopy(dest, &_data[_pos], size);
 	_pos += size;
 }
 

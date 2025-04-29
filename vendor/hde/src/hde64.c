@@ -5,24 +5,21 @@
  *
  */
 
+/*
+ * Modifications:
+ * Copyright (c) 2025, Aleksandr B.
+ * All rights reserved.
+ *
+ * - Commented out `#if defined` to ensure compatibility with multiple architectures simultaneously.
+ * - Implemented a custom version of `memset` to eliminate dependencies on `string.h`
+ */
+
 //#if defined(_M_X64) || defined(__x86_64__)
 
 #include "hde64.h"
 #include "table64.h"
 
-// Custom implementation to eliminate the need for including `string.h`.
-static void *MemSet(void *_Dst, int _Val, size_t _Size)
-{
-    unsigned char *dst = (unsigned char *)_Dst;
-    unsigned char val = (unsigned char)_Val;
-
-    for (size_t i = 0; i < _Size; ++i)
-    {
-        dst[i] = val;
-    }
-
-    return _Dst;
-}
+#include "hde_utils.h"
 
 unsigned int hde64_disasm(const void *code, hde64s *hs)
 {
@@ -30,7 +27,7 @@ unsigned int hde64_disasm(const void *code, hde64s *hs)
     uint8_t *ht = hde64_table, m_mod, m_reg, m_rm, disp_size = 0;
     uint8_t op64 = 0;
 
-    MemSet(hs, 0, sizeof(hde64s));
+    hde_memset(hs, 0, sizeof(hde64s));
 
     for (x = 16; x; x--)
         switch (c = *p++) {

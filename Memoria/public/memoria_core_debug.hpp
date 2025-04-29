@@ -70,7 +70,7 @@ extern void *GetFunctionBaseAddressFromItsCode(const void *address);
  *
  * @return The call stack.
  */
-extern __declspec(noinline) Memoria::Vector<void *> GetStackBacktrace();
+extern __declspec(noinline) Memoria::FixedVector<void *, 128> GetStackBacktrace();
 
 /**
  * @brief Retrieves the call stack in a beautified format for the calling code.
@@ -92,7 +92,5 @@ extern __declspec(noinline) Memoria::Vector<void *> GetStackBacktrace();
 //extern Memoria::Vector<std::string> GetBeautyStackBacktrace();
 
 extern void *GetImageDirectoryData(void *base, bool image, uint16_t dir, uint32_t *size);
-
-
 
 MEMORIA_END

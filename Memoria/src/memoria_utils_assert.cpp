@@ -36,7 +36,7 @@ bool AssertImpl(bool exprResult, const char *exprStr, const char *file, int line
 				exprStr, file, line);
 		}
 
-		int result = MessageBoxA(HWND_DESKTOP, buffer, "Assert", MB_ICONERROR | MB_ABORTRETRYIGNORE);
+		int result = MessageBoxA(HWND_DESKTOP, buffer, "Assert", MB_ICONERROR | MB_ABORTRETRYIGNORE | MB_SYSTEMMODAL);
 
 		if (result == IDABORT)
 		{

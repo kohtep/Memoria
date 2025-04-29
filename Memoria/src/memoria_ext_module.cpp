@@ -16,7 +16,6 @@ MEMORIA_BEGIN
 CMemoryBlock::CMemoryBlock(const void *address, size_t size)
 	: _address(address)
 	, _size(size)
-	, _patches{}
 {
 
 }
@@ -87,9 +86,6 @@ size_t CMemoryBlock::HookRefAddr(const void *addr_target, const void *addr_hook,
 			patch = Memoria::PatchRelative(ref.xref, addr_hook);
 
 		Assert(patch);
-
-		if (patch != nullptr)
-			_patches.push_back(patch);
 	}
 
 	return refs.size();

@@ -14,6 +14,8 @@
 
 MEMORIA_BEGIN
 
+static Memoria::FixedVector<CPatch, MAX_PATCHES_COUNT> Patches{};
+
 bool CPatch::IsActive() const
 {
 	if (!_dest_address)
@@ -30,9 +32,9 @@ bool CPatch::IsValid() const
 	bool equal;
 
 	if (_active)
-		equal = CompareMemory(_dest_address, _data_patch.data(), _data_patch.size()) == 0;
+		equal = MemCompare(_dest_address, _data_patch.data(), _data_patch.size()) == 0;
 	else
-		equal = CompareMemory(_dest_address, _data_origin.data(), _data_origin.size()) == 0;
+		equal = MemCompare(_dest_address, _data_origin.data(), _data_origin.size()) == 0;
 
 	return equal;
 }
@@ -83,17 +85,19 @@ void CPatch::Toggle(bool state)
 CPatch::CPatch(void *dest_address, const void *source_address, size_t size, bool instant_deploy)
 	: _dest_address(dest_address)
 	, _active(false)
+#ifdef _DEBUG
 	, _stack_backtrace(GetStackBacktrace())
+#endif
 {
 	Assert(dest_address && source_address && size);
 
 	if (dest_address && source_address && size > 0)
 	{
-		_data_origin.resize(size);
-		_data_patch.resize(size);
+		_data_origin.zero_initialize();
+		_data_patch.zero_initialize();
 
-		CopyMemory(_data_origin.data(), dest_address, size);
-		CopyMemory(_data_patch.data(), source_address, size);
+		MemCopy(_data_origin.data(), dest_address, size);
+		MemCopy(_data_patch.data(), source_address, size);
 	}
 	else
 	{
@@ -103,34 +107,8 @@ CPatch::CPatch(void *dest_address, const void *source_address, size_t size, bool
 		_data_patch.clear();
 	}
 
-	GetPatches().emplace_back(this);
-
 	if (instant_deploy)
 		Apply();
-}
-
-CPatch::~CPatch()
-{
-	if (IsActive())
-		Toggle(false);
-
-	_dest_address = {};
-
-	_data_origin.clear();
-	_data_patch.clear();
-
-	_stack_backtrace.clear();
-
-	auto &patches = GetPatches();
-
-	for (auto it = patches.begin(); it != patches.end(); ++it)
-	{
-		if (*it == this)
-		{
-			patches.erase(it);
-			break;
-		}
-	}
 }
 
 CPatch *PatchU8(void *addr, uint8_t value, bool instant_deploy, ptrdiff_t offset)
@@ -253,23 +231,16 @@ CPatch *PatchWStr(void *addr, const wchar_t *value, bool instant_deploy, ptrdiff
 		(len + 1) * sizeof(wchar_t), instant_deploy);
 }
 
-bool FreePatch(CPatch *patch)
+Memoria::FixedVector<CPatch, MAX_PATCHES_COUNT> &GetPatches()
 {
-	if (!patch)
-		return false;
-
-	delete patch;
-	return true;
+	return Patches;
 }
 
-bool FreeAllPatches()
+bool FreePatches()
 {
-	for (auto patch : CPatch::GetPatches())
-	{
-		delete patch;
-	}
+	for (auto &patch : GetPatches())
+		patch.Restore();
 
-	Assert(CPatch::GetPatches().empty());
 	return true;
 }
 

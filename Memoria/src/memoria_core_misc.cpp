@@ -506,7 +506,7 @@ HMODULE GetModuleHandleDirect(fnv1a_t module_name_hash)
 	{
 		PLDR_DATA_TABLE_ENTRY pModule = CONTAINING_RECORD(pListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
 
-		if (FNV1a(pModule->BaseDllName.Buffer) == module_name_hash)
+		if (FNV1aRuntime(pModule->BaseDllName.Buffer) == module_name_hash)
 		{
 			return (HMODULE)pModule->DllBase;
 		}
@@ -539,7 +539,7 @@ void *GetProcAddressDirect(fnv1a_t module_name_hash, fnv1a_t function_name_hash)
 	{
 		char *function_name = (char *)(reinterpret_cast<uintptr_t>(hModule) + names[i]);
 
-		if (FNV1a(function_name) == function_name_hash)
+		if (FNV1aRuntime(function_name) == function_name_hash)
 			return (void *)((PBYTE)hModule + functions[ordinals[i]]);
 	}
 

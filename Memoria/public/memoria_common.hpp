@@ -24,65 +24,18 @@
 
 #endif
 
-// memoria_utils_buffer.cpp
-//#define MEMORIA_DISABLE_UTILS_BUFFER
+MEMORIA_BEGIN
 
-// memoria_captura_function.cpp
-//#define MEMORIA_DISABLE_CAPTURA_FUNCTION
+extern bool Startup();
+extern bool Cleanup();
 
-// memoria_captura_hook32.cpp
-//#define MEMORIA_DISABLE_CAPTURA_HOOK32
+//
+// An alternative for scenarios where functionality similar to std::atexit is required.
+//
+// NOTE: For this to work, the programmer must manually call Memoria::Cleanup
+// at the termination of the application.
+//
 
-// memoria_captura_hook64.cpp
-//#define MEMORIA_DISABLE_CAPTURA_HOOK64
+extern void RegisterOnExitCallback(void(*cb)());
 
-// memoria_captura_trampoline.cpp
-//#define MEMORIA_DISABLE_CAPTURA_TRAMPOLINE
-
-// memoria_core_check.cpp
-//#define MEMORIA_DISABLE_CORE_CHECK
-
-// memoria_core_debug.cpp
-//#define MEMORIA_DISABLE_CORE_DEBUG
-
-// memoria_core_errors.cpp
-//#define MEMORIA_DISABLE_CORE_ERRORS
-
-// memoria_core_misc.cpp
-//#define MEMORIA_DISABLE_CORE_MISC
-
-// memoria_core_options.cpp
-//#define MEMORIA_DISABLE_CORE_OPTIONS
-
-// memoria_core_read.cpp
-//#define MEMORIA_DISABLE_CORE_READ
-
-// memoria_core_rtti.cpp
-//#define MEMORIA_DISABLE_CORE_RTTI
-
-// memoria_core_search.cpp
-//#define MEMORIA_DISABLE_CORE_SEARCH
-
-// memoria_core_signature.cpp
-//#define MEMORIA_DISABLE_CORE_SIGNATURE
-
-// memoria_core_windows.cpp
-//#define MEMORIA_DISABLE_CORE_WINDOWS
-
-// memoria_core_write.cpp
-//#define MEMORIA_DISABLE_CORE_WRITE
-
-// memoria_core_mempool.cpp
-//#define MEMORIA_DISABLE_CORE_MEMPOOL
-
-// memoria_ext_hook.cpp
-//#define MEMORIA_DISABLE_EXT_HOOK
-
-// memoria_ext_module.cpp
-//#define MEMORIA_DISABLE_EXT_MODULE
-
-// memoria_ext_patch.cpp
-//#define MEMORIA_DISABLE_EXT_PATCH
-
-// memoria_ext_sig.cpp
-//#define MEMORIA_DISABLE_EXT_SIG
+MEMORIA_END

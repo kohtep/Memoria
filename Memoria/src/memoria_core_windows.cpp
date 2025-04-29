@@ -120,7 +120,7 @@ PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const char *name)
 
 	for (unsigned int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++)
 	{
-		if (CompareMemory(section->Name, name, name_len) == 0)
+		if (MemCompare(section->Name, name, name_len) == 0)
 		{
 			return section;
 		}

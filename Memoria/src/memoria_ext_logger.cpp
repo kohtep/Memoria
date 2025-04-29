@@ -10,7 +10,7 @@
 
 MEMORIA_BEGIN
 
-static Memoria::InlineVector<LoggerCallback_t, 32> LoggerFns;
+static Memoria::FixedVector<LoggerCallback_t, 32> LoggerFns;
 
 static bool IsConsoleAvailable()
 {
