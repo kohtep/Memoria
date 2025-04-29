@@ -3,8 +3,6 @@
  * Copyright (c) 2025, Aleksandr B.
  * All rights reserved.
  *
- * This software is licensed under the 3-Clause BSD License.
- * See the LICENSE file in the project root for full license information.
  */
 
 #include "hde_utils.h"
