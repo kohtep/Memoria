@@ -1,7 +1,5 @@
 #include "memoria_captura_hook64.hpp"
 
-#ifndef MEMORIA_DISABLE_CAPTURA_HOOK64
-
 #include "memoria_captura_trampoline.hpp"
 
 #include "memoria_utils_buffer.hpp"
@@ -163,5 +161,3 @@ size_t CalculateHookSize64(void *addr_target, eInvokeMethod method)
 }
 
 MEMORIA_END
-
-#endif

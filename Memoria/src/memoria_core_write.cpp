@@ -1,7 +1,5 @@
 #include "memoria_core_write.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_WRITE
-
 #include "memoria_core_options.hpp"
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
@@ -184,5 +182,3 @@ bool FillNops(void *addr, size_t size)
 }
 
 MEMORIA_END
-
-#endif

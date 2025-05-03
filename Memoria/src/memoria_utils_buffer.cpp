@@ -1,7 +1,5 @@
 #include "memoria_utils_buffer.hpp"
 
-#ifndef MEMORIA_DISABLE_UTILS_BUFFER
-
 #include "memoria_core_write.hpp"
 #include "memoria_core_misc.hpp"
 #include "memoria_utils_string.hpp"
@@ -230,5 +228,3 @@ bool CReadBuffer::IsEndOfBuffer() const
 }
 
 MEMORIA_END
-
-#endif

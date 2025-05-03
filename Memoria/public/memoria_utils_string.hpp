@@ -15,8 +15,6 @@
 
 #include "memoria_common.hpp"
 
-#include <vadefs.h>
-
 MEMORIA_BEGIN
 
 // strchr
@@ -103,12 +101,6 @@ extern int StrNCatSafeA(char *lpDest, size_t dwDestSize, const char *lpSrc, size
 // strncat_s (Wide)
 extern int StrNCatSafeW(wchar_t *lpDest, size_t dwDestSize, const wchar_t *lpSrc, size_t dwCount);
 
-// vsprintf_s
-extern int FormatBufSafeV(char *lpBuffer, size_t dwMaxSize, const char *lpFormat, va_list args);
-
-// sprintf_s
-extern int FormatBufSafe(char *lpBuffer, size_t dwMaxSize, const char *lpFormat, ...);
-
 // std::to_string(int)
 extern int IntToStr(char *lpBuffer, int nValue);
 
@@ -133,12 +125,16 @@ extern int DoubleToStr(char *lpBuffer, double fValue, int nPrecision);
 // std::to_string(long double)
 extern int LongDoubleToStr(char *lpBuffer, long double value, int precision);
 
-// std::isnan
+// std::isnan(double)
 extern bool IsNan(double val);
+
+// std::isnan(long double)
 extern bool IsNan(long double val);
 
-// std::isinf
+// std::isinf(double)
 extern bool IsInf(double val);
+
+// std::isinf(long double)
 extern bool IsInf(long double val);
 
 // strlen
@@ -148,6 +144,3 @@ extern size_t StrLenA(const char *lpString);
 extern size_t StrLenW(const wchar_t *lpString);
 
 MEMORIA_END
-
-// sprintf
-#define FormatBuf(buffer, fmt, ...) Memoria::FormatBufSafe(buffer, static_cast<size_t>(-1), fmt, __VA_ARGS__)

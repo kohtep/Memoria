@@ -1,7 +1,5 @@
 #include "memoria_ext_sig.hpp"
 
-#ifndef MEMORIA_DISABLE_EXT_SIG
-
 #include "memoria_core_search.hpp"
 #include "memoria_core_check.hpp"
 #include "memoria_core_errors.hpp"
@@ -691,5 +689,3 @@ bool CSigHandle::CheckSignature(const char *value, ptrdiff_t offset) const
 }
 
 MEMORIA_END
-
-#endif

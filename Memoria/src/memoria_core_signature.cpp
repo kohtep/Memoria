@@ -3,8 +3,6 @@
 #include "memoria_utils_string.hpp"
 #include "memoria_utils_assert.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_SIGNATURE
-
 #include <string_view>
 
 MEMORIA_BEGIN
@@ -136,5 +134,3 @@ bool CSignature::HasOptionals() const
 }
 
 MEMORIA_END
-
-#endif

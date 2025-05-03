@@ -1,7 +1,5 @@
 #include "memoria_core_read.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_READ
-
 #include "memoria_core_options.hpp"
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
@@ -213,5 +211,3 @@ Memoria::Vector<uint8_t> GetMemoryData(const void *source, size_t size)
 }
 
 MEMORIA_END
-
-#endif

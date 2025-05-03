@@ -1,7 +1,5 @@
 #include "memoria_ext_module.hpp"
 
-#ifndef MEMORIA_DISABLE_EXT_MODULE
-
 #include "memoria_core_misc.hpp"
 #include "memoria_core_search.hpp"
 #include "memoria_core_write.hpp"
@@ -76,7 +74,7 @@ size_t CMemoryBlock::HookRefAddr(const void *addr_target, const void *addr_hook,
 {
 	auto refs = FindReferences(GetBase(), GetBase(), GetLastByte(), addr_target, opcode, true, true, false);
 
-	for (auto &&ref : refs)
+	for (auto &ref : refs)
 	{
 		CPatch *patch;
 
@@ -288,5 +286,3 @@ std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromAddress(std::nullptr_t)
 }
 
 MEMORIA_END
-
-#endif

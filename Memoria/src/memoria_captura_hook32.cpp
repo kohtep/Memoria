@@ -1,7 +1,5 @@
 #include "memoria_captura_hook32.hpp"
 
-#ifndef MEMORIA_DISABLE_CAPTURA_HOOK32
-
 #include "memoria_utils_buffer.hpp"
 #include "memoria_utils_assert.hpp"
 
@@ -141,5 +139,3 @@ size_t CalculateHookSize32(void *addr_target, eInvokeMethod method)
 }
 
 MEMORIA_END
-
-#endif

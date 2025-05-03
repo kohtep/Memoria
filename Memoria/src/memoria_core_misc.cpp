@@ -1,8 +1,7 @@
 #include "memoria_core_misc.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_MISC
-
 #include "memoria_utils_string.hpp"
+#include "memoria_utils_format.hpp"
 
 #include <Windows.h>
 #include <inttypes.h>
@@ -506,7 +505,7 @@ HMODULE GetModuleHandleDirect(fnv1a_t module_name_hash)
 	{
 		PLDR_DATA_TABLE_ENTRY pModule = CONTAINING_RECORD(pListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
 
-		if (FNV1aRuntime(pModule->BaseDllName.Buffer) == module_name_hash)
+		if (FNV1a64(pModule->BaseDllName.Buffer) == module_name_hash)
 		{
 			return (HMODULE)pModule->DllBase;
 		}
@@ -539,7 +538,7 @@ void *GetProcAddressDirect(fnv1a_t module_name_hash, fnv1a_t function_name_hash)
 	{
 		char *function_name = (char *)(reinterpret_cast<uintptr_t>(hModule) + names[i]);
 
-		if (FNV1aRuntime(function_name) == function_name_hash)
+		if (FNV1a64(function_name) == function_name_hash)
 			return (void *)((PBYTE)hModule + functions[ordinals[i]]);
 	}
 
@@ -590,5 +589,3 @@ void *GetInterfaceAddress(const char *module_name, const char *interface_name)
 }
 
 MEMORIA_END
-
-#endif

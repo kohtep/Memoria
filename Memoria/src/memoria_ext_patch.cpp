@@ -1,7 +1,5 @@
 #include "memoria_ext_patch.hpp"
 
-#ifndef MEMORIA_DISABLE_EXT_PATCH
-
 #include <Windows.h>
 #include <string_view>
 
@@ -245,5 +243,3 @@ bool FreePatches()
 }
 
 MEMORIA_END
-
-#endif

@@ -1,7 +1,5 @@
 #include "memoria_captura_function.hpp"
 
-#ifndef MEMORIA_DISABLE_CAPTURA_FUNCTION
-
 MEMORIA_BEGIN
 
 bool CFunctionImpl::IsActive() const
@@ -20,5 +18,3 @@ bool CFunctionImpl::Unhook()
 }
 
 MEMORIA_END
-
-#endif

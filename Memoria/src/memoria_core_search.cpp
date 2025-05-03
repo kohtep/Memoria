@@ -1,7 +1,5 @@
 #include "memoria_core_search.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_SEARCH
-
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
 #include "memoria_core_options.hpp"
@@ -405,5 +403,3 @@ void *FindRelative(const void *addr_start, const void *addr_min, const void *add
 }
 
 MEMORIA_END
-
-#endif

@@ -1,7 +1,5 @@
 #include "memoria_captura_trampoline.hpp"
 
-#ifndef MEMORIA_DISABLE_CAPTURA_HOOK64
-
 #include "memoria_core_misc.hpp"
 #include "memoria_core_write.hpp"
 #include "memoria_core_mempool.hpp"
@@ -173,5 +171,3 @@ bool Hook64(void *target, const void *hook, void *trampoline, eInvokeMethod meth
 }
 
 MEMORIA_END
-
-#endif

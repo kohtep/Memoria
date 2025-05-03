@@ -1,7 +1,5 @@
 #include "memoria_core_check.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_CHECK
-
 #include "memoria_core_misc.hpp"
 #include "memoria_core_options.hpp"
 #include "memoria_core_errors.hpp"
@@ -167,5 +165,3 @@ bool CheckSignature(const void *addr, const char *value, ptrdiff_t offset)
 }
 
 MEMORIA_END
-
-#endif

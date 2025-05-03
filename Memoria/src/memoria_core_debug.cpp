@@ -1,9 +1,8 @@
 #include "memoria_core_debug.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_DEBUG
-
 #include "memoria_core_misc.hpp"
 #include "memoria_utils_string.hpp"
+#include "memoria_utils_format.hpp"
 #include "memoria_utils_optional.hpp"
 
 #include <Windows.h>
@@ -337,5 +336,3 @@ Memoria::FixedVector<void *, 128> GetStackBacktrace()
 //}
 
 MEMORIA_END
-
-#endif

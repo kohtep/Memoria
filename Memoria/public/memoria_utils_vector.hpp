@@ -462,7 +462,12 @@ private:
 	// to prevent the compiler from injecting unnecessary `memset` calls
 	// for the array.
 	//
+
+#ifdef _DEBUG
+	T _container[MaxItems]{};
+#else
 	alignas(T) uint8_t _container[sizeof(T) * MaxItems]{};
+#endif
 
 	void ensure_capacity(size_t min_capacity)
 	{

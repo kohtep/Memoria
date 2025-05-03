@@ -163,6 +163,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\vendor\hde\src\hde32.c" />
     <ClCompile Include="..\..\vendor\hde\src\hde64.c" />
+    <ClCompile Include="..\..\vendor\hde\src\hde_utils.c" />
     <ClCompile Include="..\src\memoria_captura_function.cpp" />
     <ClCompile Include="..\src\memoria_captura_hook32.cpp" />
     <ClCompile Include="..\src\memoria_captura_hook64.cpp" />
@@ -187,11 +188,15 @@
     <ClCompile Include="..\src\memoria_ext_sig.cpp" />
     <ClCompile Include="..\src\memoria_utils_assert.cpp" />
     <ClCompile Include="..\src\memoria_utils_buffer.cpp" />
+    <ClCompile Include="..\src\memoria_utils_format.cpp" />
+    <ClCompile Include="..\src\memoria_utils_msgbox.cpp" />
+    <ClCompile Include="..\src\memoria_utils_secure.cpp" />
     <ClCompile Include="..\src\memoria_utils_string.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\vendor\hde\public\hde32.h" />
     <ClInclude Include="..\..\vendor\hde\public\hde64.h" />
+    <ClInclude Include="..\..\vendor\hde\public\hde_utils.h" />
     <ClInclude Include="..\..\vendor\hde\public\table32.h" />
     <ClInclude Include="..\..\vendor\hde\public\table64.h" />
     <ClInclude Include="..\public\memoria_amalgamation.hpp" />
@@ -221,8 +226,11 @@
     <ClInclude Include="..\public\memoria_ext_sig.hpp" />
     <ClInclude Include="..\public\memoria_utils_assert.hpp" />
     <ClInclude Include="..\public\memoria_utils_buffer.hpp" />
+    <ClInclude Include="..\public\memoria_utils_format.hpp" />
     <ClInclude Include="..\public\memoria_utils_list.hpp" />
+    <ClInclude Include="..\public\memoria_utils_msgbox.hpp" />
     <ClInclude Include="..\public\memoria_utils_optional.hpp" />
+    <ClInclude Include="..\public\memoria_utils_secure.hpp" />
     <ClInclude Include="..\public\memoria_utils_string.hpp" />
     <ClInclude Include="..\public\memoria_utils_vector.hpp" />
   </ItemGroup>

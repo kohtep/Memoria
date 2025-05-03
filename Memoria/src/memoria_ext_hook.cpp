@@ -1,7 +1,5 @@
 #include "memoria_ext_hook.hpp"
 
-#ifndef MEMORIA_DISABLE_EXT_HOOK
-
 #include "memoria_utils_string.hpp"
 #include "memoria_core_write.hpp"
 
@@ -49,5 +47,3 @@ void CShadowVTable::Hook(size_t index, const void *callback)
 }
 
 MEMORIA_END
-
-#endif

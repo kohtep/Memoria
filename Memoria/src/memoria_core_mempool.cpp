@@ -1,7 +1,5 @@
 #include "memoria_core_mempool.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_MEMPOOL
-
 #include "memoria_core_misc.hpp"
 #include "memoria_utils_assert.hpp"
 #include "memoria_utils_list.hpp"
@@ -201,5 +199,3 @@ void *AllocFar(const void *addr_source, size_t size, bool is_executable, bool is
 }
 
 MEMORIA_END
-
-#endif

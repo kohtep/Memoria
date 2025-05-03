@@ -7,97 +7,112 @@
 
 MEMORIA_BEGIN
 
-constexpr uint64_t FNV1A_PRIME = 0x00000100000001B3ull;
-constexpr uint64_t FNV1A_BASIS = 0xcbf29ce484222325ull;
+inline constexpr uint32_t FNV1A_32_BASIS = 0x811c9dc5;
+inline constexpr uint32_t FNV1A_32_PRIME = 0x01000193;
 
-template <typename CharT, size_t N, bool CaseInsensitive = true>
-constexpr uint64_t FNV1aConstexpr(const CharT(&text)[N])
+inline constexpr uint64_t FNV1A_64_BASIS = 0xcbf29ce484222325ull;
+inline constexpr uint64_t FNV1A_64_PRIME = 0x00000100000001B3ull;
+
+inline constexpr char tolower_constexpr(char ch)
 {
-    static_assert(std::is_same_v<CharT, char> || std::is_same_v<CharT, wchar_t>);
-
-    auto tolower_constexpr = [](char ch) constexpr -> char {
-        return (ch >= 'A' && ch <= 'Z') ? (ch + 'a' - 'A') : ch;
-        };
-
-    auto towlower_constexpr = [](wchar_t ch) constexpr -> wchar_t {
-        return (ch >= L'A' && ch <= L'Z') ? (ch + L'a' - L'A') : ch;
-        };
-
-    uint64_t hash = FNV1A_BASIS;
-
-    for (size_t i = 0; i < N - 1; ++i)
-    {
-        CharT ch = text[i];
-        if constexpr (CaseInsensitive)
-        {
-            if constexpr (std::is_same_v<CharT, char>)
-                ch = tolower_constexpr(static_cast<unsigned char>(ch));
-            else if constexpr (std::is_same_v<CharT, wchar_t>)
-                ch = towlower_constexpr(ch);
-        }
-        hash ^= static_cast<uint64_t>(ch);
-        hash *= FNV1A_PRIME;
-    }
-
-    return hash;
+    return (ch >= 'A' && ch <= 'Z') ? (ch + 'a' - 'A') : ch;
 }
 
-template <typename CharT>
-uint64_t FNV1aRuntime(const CharT *text, bool case_insensitive = true)
+inline constexpr wchar_t towlower_constexpr(wchar_t ch)
 {
-    static_assert(std::is_same_v<CharT, char> || std::is_same_v<CharT, wchar_t>);
-
-    auto tolower_runtime = [](char ch) -> char {
-        return (ch >= 'A' && ch <= 'Z') ? (ch + 'a' - 'A') : ch;
-        };
-
-    auto towlower_runtime = [](wchar_t ch) -> wchar_t {
-        return (ch >= L'A' && ch <= L'Z') ? (ch + L'a' - L'A') : ch;
-        };
-
-    uint64_t hash = FNV1A_BASIS;
-
-    while (*text)
-    {
-        CharT ch = *text;
-        if (case_insensitive)
-        {
-            if constexpr (std::is_same_v<CharT, char>)
-                ch = tolower_runtime(static_cast<unsigned char>(ch));
-            else if constexpr (std::is_same_v<CharT, wchar_t>)
-                ch = towlower_runtime(ch);
-        }
-        hash ^= static_cast<uint64_t>(ch);
-        hash *= FNV1A_PRIME;
-        ++text;
-    }
-
-    return hash;
+    return (ch >= L'A' && ch <= L'Z') ? (ch + L'a' - L'A') : ch;
 }
 
-class fnv1a_t
+inline constexpr uint32_t FNV1a32(const char *const str, bool case_insensitive = true) noexcept
 {
-private:
-    uint64_t _value;
+    return (str[0] == '\0')
+        ? FNV1A_32_BASIS
+        : ((FNV1a32(str + 1, case_insensitive) ^
+            static_cast<uint8_t>(case_insensitive ? tolower_constexpr(str[0]) : str[0]))
+            * FNV1A_32_PRIME);
+}
 
-public:
-    constexpr fnv1a_t() : _value(0) {}
+inline constexpr uint32_t FNV1a32(const wchar_t *const str, bool case_insensitive = true) noexcept
+{
+    return (str[0] == L'\0')
+        ? FNV1A_32_BASIS
+        : ((FNV1a32(str + 1, case_insensitive) ^
+            static_cast<uint32_t>(case_insensitive ? towlower_constexpr(str[0]) : str[0]))
+            * FNV1A_32_PRIME);
+}
 
-    constexpr fnv1a_t(uint64_t val) : _value(val) {}
+inline constexpr uint64_t FNV1a64(const char *const str, bool case_insensitive = true) noexcept
+{
+    return (str[0] == '\0')
+        ? FNV1A_64_BASIS
+        : ((FNV1a64(str + 1, case_insensitive) ^
+            static_cast<uint8_t>(case_insensitive ? tolower_constexpr(str[0]) : str[0]))
+            * FNV1A_64_PRIME);
+}
 
-    template <typename CharT, size_t N, bool CaseInsensitive = true>
-    constexpr fnv1a_t(const CharT(&str)[N])
-        : _value(Memoria::FNV1aConstexpr<CharT, N, CaseInsensitive>(str))
+inline constexpr uint64_t FNV1a64(const wchar_t *const str, bool case_insensitive = true) noexcept
+{
+    return (str[0] == L'\0')
+        ? FNV1A_64_BASIS
+        : ((FNV1a64(str + 1, case_insensitive) ^
+            static_cast<uint64_t>(case_insensitive ? towlower_constexpr(str[0]) : str[0]))
+            * FNV1A_64_PRIME);
+}
+
+// Stub. Should be removed in the future.
+using fnv1a_t = uint64_t;
+
+//
+// The FNV1a64_t and FNV1a32_t classes are necessary to enable usage like this:
+//
+//   gSomeMgr.Dispatch<"Init">();
+//
+// The `Dispatch` method itself looks like this:
+//
+//   template <Memoria::FNV1a64_t Name>
+//   CallchainResult Dispatch()
+//   {
+//       return Dispatch<Name>();
+//   }
+//
+// It is not possible to pass `Name` as an argument in such a way that the hash of the "Init"
+// string is passed instead of the string itself. This is due to certain `constexpr` constraints,
+// which require the variable to remain alive during compile-time evaluation.
+// Microsoft's compiler does not consider a string that is guaranteed to stay alive
+// as actually remaining so during execution. Therefore, such a string has to be passed
+// as a template argument.
+//
+
+template <size_t N>
+struct FNV1a64_t
+{
+    uint64_t Hash;
+
+    constexpr FNV1a64_t(const char(&in)[N])
     {
+        Hash = FNV1a64(in);
     }
-
-    template <typename CharT>
-    fnv1a_t(const CharT *str, bool case_insensitive = true)
-        : _value(Memoria::FNV1aRuntime(str, case_insensitive))
+    
+    constexpr FNV1a64_t(const wchar_t(&in)[N])
     {
+        Hash = FNV1a64(in);
     }
+};
 
-    constexpr operator uint64_t() const { return _value; }
+template <size_t N>
+struct FNV1a32_t
+{
+    uint32_t Hash;
+
+    constexpr FNV1a32_t(const char(&in)[N])
+    {
+        Hash = FNV1a32(in);
+    }
+    
+    constexpr FNV1a32_t(const wchar_t(&in)[N])
+    {
+        Hash = FNV1a32(in);
+    }
 };
 
 MEMORIA_END

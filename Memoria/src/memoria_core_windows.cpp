@@ -1,7 +1,5 @@
 #include "memoria_core_windows.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_SIGNATURE
-
 #include "memoria_core_misc.hpp"
 #include "memoria_utils_string.hpp"
 
@@ -321,5 +319,3 @@ Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle)
 }
 
 MEMORIA_END
-
-#endif

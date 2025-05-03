@@ -2,8 +2,6 @@
 
 #include "memoria_common.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_OPTIONS
-
 MEMORIA_BEGIN
 
 struct MemoriaContext_t
@@ -31,5 +29,3 @@ bool IsSafeModeActive()
 }
 
 MEMORIA_END
-
-#endif

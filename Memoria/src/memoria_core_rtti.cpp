@@ -1,7 +1,5 @@
 #include "memoria_core_rtti.hpp"
 
-#ifndef MEMORIA_DISABLE_CORE_RTTI
-
 #include "memoria_core_options.hpp"
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
@@ -174,7 +172,7 @@ void **GetVTableForDescriptor(const void *addr_start, const void *addr_min, cons
 {
 	auto refs = FindReferences(addr_start, addr_min, addr_max, rtti_descriptor, 0, true, true, false, false, 4, 0);
 	
-	for (auto &&ref : refs)
+	for (auto &ref : refs)
 	{
 		RTTICompleteObjectLocator *l = (RTTICompleteObjectLocator *)((char *)ref.xref - sizeof(unsigned long) * 3);
 
@@ -200,5 +198,3 @@ void **GetVTableForClass(const void *addr_start, const void *addr_min, const voi
 }
 
 MEMORIA_END
-
-#endif

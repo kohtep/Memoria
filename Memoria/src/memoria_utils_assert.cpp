@@ -1,8 +1,11 @@
 #include "memoria_utils_assert.hpp"
 
 #include "memoria_utils_string.hpp"
+#include "memoria_utils_format.hpp"
 
 #include "Windows.h"
+
+#include "memoria_ext_logger.hpp"
 
 bool AssertImpl(bool exprResult, const char *exprStr, const char *file, int line, const char *fmt, ...)
 {
@@ -35,6 +38,8 @@ bool AssertImpl(bool exprResult, const char *exprStr, const char *file, int line
 				"Line: %d\n\n",
 				exprStr, file, line);
 		}
+
+		LOG_DBG("Assert: %s, File: %s, Line: %d", exprStr, file, line);
 
 		int result = MessageBoxA(HWND_DESKTOP, buffer, "Assert", MB_ICONERROR | MB_ABORTRETRYIGNORE | MB_SYSTEMMODAL);
 

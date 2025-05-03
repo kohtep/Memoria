@@ -1,6 +1,7 @@
 #include "memoria_ext_logger.hpp"
 
 #include "memoria_utils_string.hpp"
+#include "memoria_utils_format.hpp"
 #include "memoria_utils_vector.hpp"
 #include "memoria_utils_optional.hpp"
 #include "memoria_utils_assert.hpp"
@@ -126,7 +127,7 @@ void DispatchLog(const char *fmt, ...)
 	Memoria::FormatBufSafeV(msgBuf, sizeof(msgBuf), fmt, args);
 	va_end(args);
 
-	for (auto &&fn : LoggerFns)
+	for (auto fn : LoggerFns)
 		fn(msgBuf);
 }
 

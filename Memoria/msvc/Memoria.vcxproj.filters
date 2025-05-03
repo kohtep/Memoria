@@ -27,6 +27,18 @@
     <ClCompile Include="..\..\vendor\hde\src\hde32.c">
       <Filter>vendor\hde\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\memoria_core_errors.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memoria_core_mempool.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memoria_core_misc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memoria_core_options.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\memoria_core_read.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -48,6 +60,9 @@
     <ClCompile Include="..\src\memoria_ext_hook.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\memoria_ext_logger.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\memoria_ext_module.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -61,6 +76,15 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\memoria_utils_buffer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memoria_utils_format.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memoria_utils_msgbox.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memoria_utils_secure.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\memoria_utils_string.cpp">
@@ -87,20 +111,8 @@
     <ClCompile Include="..\src\memoria_core_debug.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\memoria_core_errors.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\memoria_core_mempool.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\memoria_core_misc.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\memoria_core_options.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\memoria_ext_logger.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\vendor\hde\src\hde_utils.c">
+      <Filter>vendor\hde\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +173,9 @@
     <ClInclude Include="..\public\memoria_ext_hook.hpp">
       <Filter>public</Filter>
     </ClInclude>
+    <ClInclude Include="..\public\memoria_ext_logger.hpp">
+      <Filter>public</Filter>
+    </ClInclude>
     <ClInclude Include="..\public\memoria_ext_module.hpp">
       <Filter>public</Filter>
     </ClInclude>
@@ -176,10 +191,19 @@
     <ClInclude Include="..\public\memoria_utils_buffer.hpp">
       <Filter>public</Filter>
     </ClInclude>
+    <ClInclude Include="..\public\memoria_utils_format.hpp">
+      <Filter>public</Filter>
+    </ClInclude>
     <ClInclude Include="..\public\memoria_utils_list.hpp">
       <Filter>public</Filter>
     </ClInclude>
+    <ClInclude Include="..\public\memoria_utils_msgbox.hpp">
+      <Filter>public</Filter>
+    </ClInclude>
     <ClInclude Include="..\public\memoria_utils_optional.hpp">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\memoria_utils_secure.hpp">
       <Filter>public</Filter>
     </ClInclude>
     <ClInclude Include="..\public\memoria_utils_string.hpp">
@@ -206,8 +230,8 @@
     <ClInclude Include="..\public\memoria_captura_trampoline.hpp">
       <Filter>public</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\memoria_ext_logger.hpp">
-      <Filter>public</Filter>
+    <ClInclude Include="..\..\vendor\hde\public\hde_utils.h">
+      <Filter>vendor\hde\public</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
