@@ -12,6 +12,7 @@
  *
  * - Commented out `#if defined` to ensure compatibility with multiple architectures simultaneously.
  * - Implemented a custom version of `memset` to eliminate dependencies on `string.h`
+ * - `F_` flags split into `F32_` and `F64_` to prevent conflicts when using both `hde32.h` and `hde64.h`.
  */
 
 //#if defined(_M_IX86) || defined(__i386__)
@@ -79,7 +80,7 @@ unsigned int hde32_disasm(const void *code, hde32s *hs)
     cflags = ht[ht[opcode / 4] + (opcode % 4)];
 
     if (cflags == C_ERROR) {
-        hs->flags |= F_ERROR | F_ERROR_OPCODE;
+        hs->flags |= F32_ERROR | F32_ERROR_OPCODE;
         cflags = 0;
         if ((opcode & -3) == 0x24)
             cflags++;
@@ -96,18 +97,18 @@ unsigned int hde32_disasm(const void *code, hde32s *hs)
     if (hs->opcode2) {
         ht = hde32_table + DELTA_PREFIXES;
         if (ht[ht[opcode / 4] + (opcode % 4)] & pref)
-            hs->flags |= F_ERROR | F_ERROR_OPCODE;
+            hs->flags |= F32_ERROR | F32_ERROR_OPCODE;
     }
 
     if (cflags & C_MODRM) {
-        hs->flags |= F_MODRM;
+        hs->flags |= F32_MODRM;
         hs->modrm = c = *p++;
         hs->modrm_mod = m_mod = c >> 6;
         hs->modrm_rm = m_rm = c & 7;
         hs->modrm_reg = m_reg = (c & 0x3f) >> 3;
 
         if (x && ((x << m_reg) & 0x80))
-            hs->flags |= F_ERROR | F_ERROR_OPCODE;
+            hs->flags |= F32_ERROR | F32_ERROR_OPCODE;
 
         if (!hs->opcode2 && opcode >= 0xd9 && opcode <= 0xdf) {
             uint8_t t = opcode - 0xd9;
@@ -119,12 +120,12 @@ unsigned int hde32_disasm(const void *code, hde32s *hs)
                 t = ht[t] << m_reg;
             }
             if (t & 0x80)
-                hs->flags |= F_ERROR | F_ERROR_OPCODE;
+                hs->flags |= F32_ERROR | F32_ERROR_OPCODE;
         }
 
         if (pref & PRE_LOCK) {
             if (m_mod == 3) {
-                hs->flags |= F_ERROR | F_ERROR_LOCK;
+                hs->flags |= F32_ERROR | F32_ERROR_LOCK;
             } else {
                 uint8_t *table_end, op = opcode;
                 if (hs->opcode2) {
@@ -142,7 +143,7 @@ unsigned int hde32_disasm(const void *code, hde32s *hs)
                         else
                             break;
                     }
-                hs->flags |= F_ERROR | F_ERROR_LOCK;
+                hs->flags |= F32_ERROR | F32_ERROR_LOCK;
               no_lock_error:
                 ;
             }
@@ -213,7 +214,7 @@ unsigned int hde32_disasm(const void *code, hde32s *hs)
             goto no_error_operand;
 
       error_operand:
-        hs->flags |= F_ERROR | F_ERROR_OPERAND;
+        hs->flags |= F32_ERROR | F32_ERROR_OPERAND;
       no_error_operand:
 
         c = *p++;
@@ -244,7 +245,7 @@ unsigned int hde32_disasm(const void *code, hde32s *hs)
         }
 
         if (m_mod != 3 && m_rm == 4 && !(pref & PRE_67)) {
-            hs->flags |= F_SIB;
+            hs->flags |= F32_SIB;
             p++;
             hs->sib = c;
             hs->sib_scale = c >> 6;
@@ -256,26 +257,26 @@ unsigned int hde32_disasm(const void *code, hde32s *hs)
         p--;
         switch (disp_size) {
             case 1:
-                hs->flags |= F_DISP8;
+                hs->flags |= F32_DISP8;
                 hs->disp.disp8 = *p;
                 break;
             case 2:
-                hs->flags |= F_DISP16;
+                hs->flags |= F32_DISP16;
                 hs->disp.disp16 = *(uint16_t *)p;
                 break;
             case 4:
-                hs->flags |= F_DISP32;
+                hs->flags |= F32_DISP32;
                 hs->disp.disp32 = *(uint32_t *)p;
                 break;
         }
         p += disp_size;
     } else if (pref & PRE_LOCK)
-        hs->flags |= F_ERROR | F_ERROR_LOCK;
+        hs->flags |= F32_ERROR | F32_ERROR_LOCK;
 
     if (cflags & C_IMM_P66) {
         if (cflags & C_REL32) {
             if (pref & PRE_66) {
-                hs->flags |= F_IMM16 | F_RELATIVE;
+                hs->flags |= F32_IMM16 | F32_RELATIVE;
                 hs->imm.imm16 = *(uint16_t *)p;
                 p += 2;
                 goto disasm_done;
@@ -283,48 +284,48 @@ unsigned int hde32_disasm(const void *code, hde32s *hs)
             goto rel32_ok;
         }
         if (pref & PRE_66) {
-            hs->flags |= F_IMM16;
+            hs->flags |= F32_IMM16;
             hs->imm.imm16 = *(uint16_t *)p;
             p += 2;
         } else {
-            hs->flags |= F_IMM32;
+            hs->flags |= F32_IMM32;
             hs->imm.imm32 = *(uint32_t *)p;
             p += 4;
         }
     }
 
     if (cflags & C_IMM16) {
-        if (hs->flags & F_IMM32) {
-            hs->flags |= F_IMM16;
+        if (hs->flags & F32_IMM32) {
+            hs->flags |= F32_IMM16;
             hs->disp.disp16 = *(uint16_t *)p;
-        } else if (hs->flags & F_IMM16) {
-            hs->flags |= F_2IMM16;
+        } else if (hs->flags & F32_IMM16) {
+            hs->flags |= F32_2IMM16;
             hs->disp.disp16 = *(uint16_t *)p;
         } else {
-            hs->flags |= F_IMM16;
+            hs->flags |= F32_IMM16;
             hs->imm.imm16 = *(uint16_t *)p;
         }
         p += 2;
     }
     if (cflags & C_IMM8) {
-        hs->flags |= F_IMM8;
+        hs->flags |= F32_IMM8;
         hs->imm.imm8 = *p++;
     }
 
     if (cflags & C_REL32) {
       rel32_ok:
-        hs->flags |= F_IMM32 | F_RELATIVE;
+        hs->flags |= F32_IMM32 | F32_RELATIVE;
         hs->imm.imm32 = *(uint32_t *)p;
         p += 4;
     } else if (cflags & C_REL8) {
-        hs->flags |= F_IMM8 | F_RELATIVE;
+        hs->flags |= F32_IMM8 | F32_RELATIVE;
         hs->imm.imm8 = *p++;
     }
 
   disasm_done:
 
     if ((hs->len = (uint8_t)(p-(uint8_t *)code)) > 15) {
-        hs->flags |= F_ERROR | F_ERROR_LENGTH;
+        hs->flags |= F32_ERROR | F32_ERROR_LENGTH;
         hs->len = 15;
     }
 

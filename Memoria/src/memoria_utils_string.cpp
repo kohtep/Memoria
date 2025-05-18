@@ -137,7 +137,7 @@ int StrCompA(const char *lpStr1, const char *lpStr2)
 	return static_cast<unsigned char>(*lpStr1) - static_cast<unsigned char>(*lpStr2);
 }
 
-int StrNCompA(const char *lpStr1, const char *lpStr2, size_t dwCount)
+int StrLCompA(const char *lpStr1, const char *lpStr2, size_t dwCount)
 {
 	while (dwCount && *lpStr1 && (*lpStr1 == *lpStr2))
 	{
@@ -166,6 +166,54 @@ int StrICompA(const char *lpStr1, const char *lpStr2)
 		++lpStr2;
 	}
 	return static_cast<unsigned char>(*lpStr1) - static_cast<unsigned char>(*lpStr2);
+}
+
+int StrLICompA(const char *lpStr1, const char *lpStr2, size_t dwCount)
+{
+	while (dwCount && *lpStr1 && *lpStr2)
+	{
+		char ch1 = (*lpStr1 >= 'A' && *lpStr1 <= 'Z') ? *lpStr1 + 32 : *lpStr1;
+		char ch2 = (*lpStr2 >= 'A' && *lpStr2 <= 'Z') ? *lpStr2 + 32 : *lpStr2;
+
+		if (ch1 != ch2)
+			return static_cast<unsigned char>(ch1) - static_cast<unsigned char>(ch2);
+
+		++lpStr1;
+		++lpStr2;
+		--dwCount;
+	}
+
+	if (dwCount == 0)
+		return 0;
+
+	char ch1 = (*lpStr1 >= 'A' && *lpStr1 <= 'Z') ? *lpStr1 + 32 : *lpStr1;
+	char ch2 = (*lpStr2 >= 'A' && *lpStr2 <= 'Z') ? *lpStr2 + 32 : *lpStr2;
+
+	return static_cast<unsigned char>(ch1) - static_cast<unsigned char>(ch2);
+}
+
+int StrLICompW(const wchar_t *lpStr1, const wchar_t *lpStr2, size_t dwCount)
+{
+	while (dwCount && *lpStr1 && *lpStr2)
+	{
+		wchar_t ch1 = (*lpStr1 >= L'A' && *lpStr1 <= L'Z') ? *lpStr1 + 32 : *lpStr1;
+		wchar_t ch2 = (*lpStr2 >= L'A' && *lpStr2 <= L'Z') ? *lpStr2 + 32 : *lpStr2;
+
+		if (ch1 != ch2)
+			return static_cast<unsigned int>(ch1) - static_cast<unsigned int>(ch2);
+
+		++lpStr1;
+		++lpStr2;
+		--dwCount;
+	}
+
+	if (dwCount == 0)
+		return 0;
+
+	wchar_t ch1 = (*lpStr1 >= L'A' && *lpStr1 <= L'Z') ? *lpStr1 + 32 : *lpStr1;
+	wchar_t ch2 = (*lpStr2 >= L'A' && *lpStr2 <= L'Z') ? *lpStr2 + 32 : *lpStr2;
+
+	return static_cast<unsigned int>(ch1) - static_cast<unsigned int>(ch2);
 }
 
 wchar_t *StrCopyW(wchar_t *lpDest, const wchar_t *lpSrc)
@@ -436,7 +484,7 @@ int StrCompW(const wchar_t *lpStr1, const wchar_t *lpStr2)
 	return static_cast<unsigned int>(*lpStr1) - static_cast<unsigned int>(*lpStr2);
 }
 
-int StrNCompW(const wchar_t *lpStr1, const wchar_t *lpStr2, size_t dwCount)
+int StrLCompW(const wchar_t *lpStr1, const wchar_t *lpStr2, size_t dwCount)
 {
 	while (dwCount && *lpStr1 && (*lpStr1 == *lpStr2))
 	{

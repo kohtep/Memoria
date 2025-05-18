@@ -15,6 +15,9 @@
 
 #include "memoria_common.hpp"
 
+#include <cstddef>
+#include <type_traits>
+
 MEMORIA_BEGIN
 
 // strchr
@@ -66,16 +69,22 @@ extern int StrCompA(const char *lpStr1, const char *lpStr2);
 extern int StrCompW(const wchar_t *lpStr1, const wchar_t *lpStr2);
 
 // strncmp (Ansi)
-extern int StrNCompA(const char *lpStr1, const char *lpStr2, size_t dwCount);
+extern int StrLCompA(const char *lpStr1, const char *lpStr2, size_t dwCount);
 
 // strncmp (Wide)
-extern int StrNCompW(const wchar_t *lpStr1, const wchar_t *lpStr2, size_t dwCount);
+extern int StrLCompW(const wchar_t *lpStr1, const wchar_t *lpStr2, size_t dwCount);
 
 // stricmp (Ansi)
 extern int StrICompA(const char *lpStr1, const char *lpStr2);
 
 // stricmp (Wide)
 extern int StrICompW(const wchar_t *lpStr1, const wchar_t *lpStr2);
+
+// _strnicmp (Ansi)
+extern int StrLICompA(const char *lpStr1, const char *lpStr2, size_t dwCount);
+
+// _strnicmp (Wide)
+extern int StrLICompW(const wchar_t *lpStr1, const wchar_t *lpStr2, size_t dwCount);
 
 // strcat (Ansi)
 extern char *StrCatA(char *lpDest, const char *lpSrc);

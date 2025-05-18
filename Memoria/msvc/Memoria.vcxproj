@@ -50,7 +50,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -73,8 +73,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PublicIncludeDirectories>$(PublicIncludeDirectories)</PublicIncludeDirectories>
-    <OutDir>$(SolutionDir)..\build\bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)..\build\obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)..\build\bin\$(Configuration)\$(Platform)\</OutDir>
@@ -85,8 +85,8 @@
     <IntDir>$(SolutionDir)..\build\obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)..\build\bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)..\build\obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -127,31 +127,44 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)..\public;$(ProjectDir)..\..\vendor\hde\public</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>false</ExceptionHandling>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalIncludeDirectories>$(ProjectDir)..\public;$(ProjectDir)..\..\vendor\hde\public</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <Optimization>MinSpace</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,19 +172,19 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\vendor\hde\src\hde32.c" />
     <ClCompile Include="..\..\vendor\hde\src\hde64.c" />
     <ClCompile Include="..\..\vendor\hde\src\hde_utils.c" />
-    <ClCompile Include="..\src\memoria_captura_function.cpp" />
-    <ClCompile Include="..\src\memoria_captura_hook32.cpp" />
-    <ClCompile Include="..\src\memoria_captura_hook64.cpp" />
-    <ClCompile Include="..\src\memoria_captura_trampoline.cpp" />
     <ClCompile Include="..\src\memoria_common.cpp" />
     <ClCompile Include="..\src\memoria_core_check.cpp" />
     <ClCompile Include="..\src\memoria_core_debug.cpp" />
     <ClCompile Include="..\src\memoria_core_errors.cpp" />
+    <ClCompile Include="..\src\memoria_core_hook.cpp" />
     <ClCompile Include="..\src\memoria_core_mempool.cpp" />
     <ClCompile Include="..\src\memoria_core_misc.cpp" />
     <ClCompile Include="..\src\memoria_core_options.cpp" />
@@ -181,7 +194,6 @@
     <ClCompile Include="..\src\memoria_core_signature.cpp" />
     <ClCompile Include="..\src\memoria_core_windows.cpp" />
     <ClCompile Include="..\src\memoria_core_write.cpp" />
-    <ClCompile Include="..\src\memoria_ext_hook.cpp" />
     <ClCompile Include="..\src\memoria_ext_logger.cpp" />
     <ClCompile Include="..\src\memoria_ext_module.cpp" />
     <ClCompile Include="..\src\memoria_ext_patch.cpp" />
@@ -192,24 +204,23 @@
     <ClCompile Include="..\src\memoria_utils_msgbox.cpp" />
     <ClCompile Include="..\src\memoria_utils_secure.cpp" />
     <ClCompile Include="..\src\memoria_utils_string.cpp" />
+    <ClCompile Include="..\src\memoria_utils_unicode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\vendor\hde\public\hde32.h" />
     <ClInclude Include="..\..\vendor\hde\public\hde64.h" />
+    <ClInclude Include="..\..\vendor\hde\public\hde_common.h" />
     <ClInclude Include="..\..\vendor\hde\public\hde_utils.h" />
     <ClInclude Include="..\..\vendor\hde\public\table32.h" />
     <ClInclude Include="..\..\vendor\hde\public\table64.h" />
     <ClInclude Include="..\public\memoria_amalgamation.hpp" />
-    <ClInclude Include="..\public\memoria_captura_common.hpp" />
-    <ClInclude Include="..\public\memoria_captura_function.hpp" />
-    <ClInclude Include="..\public\memoria_captura_hook32.hpp" />
-    <ClInclude Include="..\public\memoria_captura_hook64.hpp" />
-    <ClInclude Include="..\public\memoria_captura_trampoline.hpp" />
     <ClInclude Include="..\public\memoria_common.hpp" />
+    <ClInclude Include="..\public\memoria_config.hpp" />
     <ClInclude Include="..\public\memoria_core_check.hpp" />
     <ClInclude Include="..\public\memoria_core_debug.hpp" />
     <ClInclude Include="..\public\memoria_core_errors.hpp" />
     <ClInclude Include="..\public\memoria_core_hash.hpp" />
+    <ClInclude Include="..\public\memoria_core_hook.hpp" />
     <ClInclude Include="..\public\memoria_core_mempool.hpp" />
     <ClInclude Include="..\public\memoria_core_misc.hpp" />
     <ClInclude Include="..\public\memoria_core_options.hpp" />
@@ -219,7 +230,6 @@
     <ClInclude Include="..\public\memoria_core_signature.hpp" />
     <ClInclude Include="..\public\memoria_core_windows.hpp" />
     <ClInclude Include="..\public\memoria_core_write.hpp" />
-    <ClInclude Include="..\public\memoria_ext_hook.hpp" />
     <ClInclude Include="..\public\memoria_ext_logger.hpp" />
     <ClInclude Include="..\public\memoria_ext_module.hpp" />
     <ClInclude Include="..\public\memoria_ext_patch.hpp" />
@@ -232,6 +242,7 @@
     <ClInclude Include="..\public\memoria_utils_optional.hpp" />
     <ClInclude Include="..\public\memoria_utils_secure.hpp" />
     <ClInclude Include="..\public\memoria_utils_string.hpp" />
+    <ClInclude Include="..\public\memoria_utils_unicode.hpp" />
     <ClInclude Include="..\public\memoria_utils_vector.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

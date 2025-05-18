@@ -119,7 +119,7 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 	size_t name_len;
 	bool is_full_name;
 
-	strcpy_s(name, rtti_name);
+	StrCopyA(name, rtti_name);
 
 	if (*(uint32_t *)name == CLASS_SIGNATURE)
 	{
@@ -129,7 +129,7 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 	else
 	{
 		is_full_name = false;
-		strcat_s(name, "@");
+		StrCatA(name, "@");
 		name_len = StrLenA(name);
 	}
 
@@ -155,12 +155,12 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 
 		if (is_full_name)
 		{
-			if (_stricmp(typeDescriptor->Name, name) == 0)
+			if (StrICompA(typeDescriptor->Name, name) == 0)
 				return typeDescriptor;
 		}
 		else
 		{
-			if (_strnicmp(&(typeDescriptor->Name[4]), name, name_len) == 0)
+			if (StrLICompA(&(typeDescriptor->Name[4]), name, name_len) == 0)
 				return typeDescriptor;
 		}
 	} while (true);

@@ -14,6 +14,7 @@
 #include "memoria_core_signature.hpp"
 #include "memoria_core_windows.hpp"
 #include "memoria_core_write.hpp"
+#include "memoria_core_hook.hpp"
 
 #include "memoria_utils_buffer.hpp"
 #include "memoria_utils_assert.hpp"
@@ -21,14 +22,8 @@
 #include "memoria_utils_optional.hpp"
 #include "memoria_utils_string.hpp"
 #include "memoria_utils_vector.hpp"
+#include "memoria_utils_format.hpp"
 
-#include "memoria_captura_common.hpp"
-#include "memoria_captura_function.hpp"
-#include "memoria_captura_hook32.hpp"
-#include "memoria_captura_hook64.hpp"
-#include "memoria_captura_trampoline.hpp"
-
-#include "memoria_ext_hook.hpp"
 #include "memoria_ext_logger.hpp"
 #include "memoria_ext_module.hpp"
 #include "memoria_ext_patch.hpp"

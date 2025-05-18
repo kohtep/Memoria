@@ -5,6 +5,10 @@
 #include "memoria_utils_format.hpp"
 #include "memoria_utils_secure.hpp"
 
+#ifdef MEMORIA_USE_LAZYIMPORT
+	#define MessageBoxA    LI_FN(MessageBoxA)
+#endif
+
 MEMORIA_BEGIN
 
 void MsgAlert(const char *fmt, ...)

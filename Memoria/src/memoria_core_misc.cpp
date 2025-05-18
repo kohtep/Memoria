@@ -6,92 +6,18 @@
 #include <Windows.h>
 #include <inttypes.h>
 
+#include "memoria_utils_secure.hpp"
+
 #undef max
 
+#ifdef MEMORIA_USE_LAZYIMPORT
+	#define CloseHandle      LI_FN_EX("kernel32.dll", CloseHandle)
+	#define CreateThread     LI_FN_EX("kernel32.dll", CreateThread)
+	#define VirtualQuery     LI_FN_EX("kernel32.dll", VirtualQuery)
+	#define LoadLibraryA     LI_FN_EX("kernel32.dll", LoadLibraryA)
+#endif
+
 MEMORIA_BEGIN
-
-void *RelToAbsEx(const void *addr, ptrdiff_t pre_offset, ptrdiff_t post_offset)
-{
-	return RelToAbs(reinterpret_cast<void *>(ptrdiff_t(addr) + pre_offset), post_offset);
-}
-
-void *RelToAbs(const void *addr, ptrdiff_t offset)
-{
-	return PtrOffset(addr, *static_cast<const int32_t *>(addr) + offset);
-}
-
-int32_t CalcRel(const void *base, void *addr, size_t imm_size)
-{
-	return reinterpret_cast<int32_t>(PtrOffset(base, -reinterpret_cast<intptr_t>(addr) - imm_size));
-}
-
-void *PtrOffset(const void *addr, ptrdiff_t offset, bool dereference)
-{
-	void *result = reinterpret_cast<void *>(reinterpret_cast<intptr_t>(addr) + offset);
-
-	if (dereference)
-		result = *reinterpret_cast<void **>(result);
-
-	return result;
-}
-
-void *PtrAdvance(const void *addr, size_t offset, bool dereference)
-{
-	void *result = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset);
-
-	if (dereference)
-		result = *reinterpret_cast<void **>(result);
-
-	return result;
-}
-
-void *PtrRewind(const void *addr, size_t offset, bool dereference)
-{
-	void *result = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) - offset);
-
-	if (dereference)
-		result = *reinterpret_cast<void **>(result);
-
-	return result;
-}
-
-bool IsInBounds(uintptr_t addr, uintptr_t addr_lower, uintptr_t addr_upper)
-{
-	if (addr < addr_lower)
-		return false;
-
-	if (addr >= addr_upper)
-		return false;
-
-	return true;
-}
-
-bool IsInBounds(const void *addr, const void *addr_lower, const void *addr_upper)
-{
-	auto naddr = reinterpret_cast<uintptr_t>(addr);
-	auto lower = reinterpret_cast<uintptr_t>(addr_lower);
-	auto upper = reinterpret_cast<uintptr_t>(addr_upper);
-
-	return IsInBounds(naddr, lower, upper);
-}
-
-bool IsIn32BitRange(uintptr_t addr1, uintptr_t addr2, ptrdiff_t offset)
-{
-	uintptr_t adjusted_addr2 = static_cast<uintptr_t>(static_cast<ptrdiff_t>(addr2) + offset);
-	uintptr_t diff = (addr1 > adjusted_addr2) ? (addr1 - adjusted_addr2) : (adjusted_addr2 - addr1);
-
-	return diff <= std::numeric_limits<uint32_t>::max();
-}
-
-bool IsIn32BitRange(const void *addr1, const void *addr2, ptrdiff_t offset)
-{
-	uintptr_t ptr1 = reinterpret_cast<uintptr_t>(addr1);
-	uintptr_t ptr2 = reinterpret_cast<uintptr_t>(addr2);
-	uintptr_t adjusted_ptr2 = static_cast<uintptr_t>(static_cast<ptrdiff_t>(ptr2) + offset);
-	uintptr_t diff = (ptr1 > adjusted_ptr2) ? (ptr1 - adjusted_ptr2) : (adjusted_ptr2 - ptr1);
-
-	return diff <= std::numeric_limits<uint32_t>::max();
-}
 
 bool IsMemoryValid(const void *addr, ptrdiff_t offset)
 {
@@ -430,7 +356,7 @@ DWORD BeginThread(void (*fnFunction)(LPVOID), LPVOID param)
 {
 	DWORD nThreadId;
 
-	HANDLE hThread = CreateThread(NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(fnFunction), param, 0, &nThreadId);
+	HANDLE hThread = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(fnFunction), param, 0, &nThreadId);
 	if (hThread == NULL)
 		return 0;
 
@@ -442,7 +368,7 @@ DWORD BeginThread(void (*fnFunction)())
 {
 	DWORD nThreadId;
 
-	HANDLE hThread = CreateThread(NULL, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(fnFunction), nullptr, 0, &nThreadId);
+	HANDLE hThread = CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(fnFunction), nullptr, 0, &nThreadId);
 	if (hThread == NULL)
 		return 0;
 
@@ -487,7 +413,9 @@ typedef struct _LDR_DATA_TABLE_ENTRY
 	UNICODE_STRING BaseDllName;
 } LDR_DATA_TABLE_ENTRY, *PLDR_DATA_TABLE_ENTRY;
 
-HMODULE GetModuleHandleDirect(fnv1a_t module_name_hash)
+using EnumModulesFn_t = bool(*)(PLDR_DATA_TABLE_ENTRY entry, LPVOID param);
+
+static void EnumModules(EnumModulesFn_t fn, LPVOID param)
 {
 #ifdef _WIN64
 	PPEB pPeb = (PPEB)__readgsqword(0x60);
@@ -505,44 +433,220 @@ HMODULE GetModuleHandleDirect(fnv1a_t module_name_hash)
 	{
 		PLDR_DATA_TABLE_ENTRY pModule = CONTAINING_RECORD(pListEntry, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
 
-		if (FNV1a64(pModule->BaseDllName.Buffer) == module_name_hash)
-		{
-			return (HMODULE)pModule->DllBase;
-		}
+		if (!fn(pModule, param))
+			break;
 
 		pListEntry = pListEntry->Flink;
 	}
+}
 
-	return NULL;
+using EnumExports_t = bool(*)(PLDR_DATA_TABLE_ENTRY entry, const char *name, void *address, WORD ordinal, LPVOID param);
+
+static bool IsForwardExport(void *function_ptr, PIMAGE_EXPORT_DIRECTORY exportDir, DWORD exportSize)
+{
+	BYTE *ptr = (BYTE *)function_ptr;
+	BYTE *start = (BYTE *)exportDir;
+	BYTE *end = start + exportSize;
+
+	return ptr >= start && ptr < end;
+}
+
+static void *ResolveForwardExport(const char *forward_str, bool force_load_library)
+{
+	char dll_name_raw[256];
+	char func_name[256];
+
+	StrNCopyA(dll_name_raw, forward_str, sizeof(dll_name_raw));
+	dll_name_raw[sizeof(dll_name_raw) - 1] = '\0';
+
+	char *dot = FindCharA(dll_name_raw, '.');
+	if (!dot)
+		return nullptr;
+
+	*dot = '\0';
+	const char *dll_name_part = dll_name_raw;
+	const char *func_name_part = dot + 1;
+
+	StrNCopyA(func_name, func_name_part, sizeof(func_name));
+	func_name[sizeof(func_name) - 1] = '\0';
+
+	char dll_name_full[MAX_PATH];
+	StrNCopyA(dll_name_full, dll_name_part, sizeof(dll_name_full) - 5);
+	dll_name_full[sizeof(dll_name_full) - 5] = '\0';
+
+	size_t len = StrLenA(dll_name_full);
+	volatile char suffix[] = { '.', 'd', 'l', 'l' };
+
+	if (len < 4 || StrLCompA(dll_name_full + len - 4, const_cast<const char *>(suffix), 4) != 0)
+		StrNCatA(dll_name_full, const_cast<const char *>(suffix), 4);
+
+	HMODULE module = GetModuleHandleDirect(FNV1a64(dll_name_full));
+	if (!module)
+	{
+		// TODO: force_load_library
+		return nullptr;
+	}
+
+	PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)module;
+	if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+		return nullptr;
+
+	PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((PBYTE)module + dosHeader->e_lfanew);
+	if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
+		return nullptr;
+
+	PIMAGE_EXPORT_DIRECTORY exportDir = (PIMAGE_EXPORT_DIRECTORY)((PBYTE)module + ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+	DWORD exportSize = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+
+	if (!exportDir || exportSize == 0)
+		return nullptr;
+
+	PDWORD functions = (PDWORD)((PBYTE)module + exportDir->AddressOfFunctions);
+	PDWORD names = (PDWORD)((PBYTE)module + exportDir->AddressOfNames);
+	PWORD ordinals = (PWORD)((PBYTE)module + exportDir->AddressOfNameOrdinals);
+
+	for (DWORD i = 0; i < exportDir->NumberOfNames; i++)
+	{
+		const char *name = (const char *)((PBYTE)module + names[i]);
+
+		if (StrCompA(name, func_name) == 0)
+		{
+			if (ordinals[i] >= exportDir->NumberOfFunctions)
+				return nullptr;
+
+			return (void *)((PBYTE)module + functions[ordinals[i]]);
+		}
+	}
+
+	return nullptr;
+}
+
+static void EnumExports(HMODULE hModule, EnumExports_t fn, LPVOID param)
+{
+	struct Args_t
+	{
+		HMODULE Target;
+		EnumExports_t Processor;
+		LPVOID Param;
+	} args;
+
+	args.Target = hModule;
+	args.Processor = fn;
+	args.Param = param;
+
+	EnumModules(+[](PLDR_DATA_TABLE_ENTRY entry, LPVOID param) -> bool
+		{
+			Args_t *args = reinterpret_cast<Args_t *>(param);
+
+			if (args->Target && entry->DllBase != args->Target)
+				return true;
+
+			HMODULE hModule = (HMODULE)entry->DllBase;
+
+			PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)hModule;
+			if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+				return true;
+
+			PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((PBYTE)hModule + dosHeader->e_lfanew);
+			if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
+				return true;
+
+			PIMAGE_EXPORT_DIRECTORY exportDir = (PIMAGE_EXPORT_DIRECTORY)((PBYTE)hModule + ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+			DWORD exportSize = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+
+			if (!exportDir || exportSize == 0)
+				return true;
+
+			PDWORD functions = (PDWORD)((PBYTE)hModule + exportDir->AddressOfFunctions);
+			PDWORD names = (PDWORD)((PBYTE)hModule + exportDir->AddressOfNames);
+			PWORD ordinals = (PWORD)((PBYTE)hModule + exportDir->AddressOfNameOrdinals);
+
+			for (DWORD i = 0; i < exportDir->NumberOfNames; i++)
+			{
+				if (ordinals[i] >= exportDir->NumberOfFunctions)
+					continue;
+
+				const char *function_name = (const char *)((PBYTE)hModule + names[i]);
+				void *function_ptr = (void *)((PBYTE)hModule + functions[ordinals[i]]);
+
+				if (IsForwardExport(function_ptr, exportDir, exportSize))
+				{
+					function_ptr = ResolveForwardExport(static_cast<const char *>(function_ptr), true);
+
+					if (!function_ptr)
+						continue;
+				}
+
+				if (!args->Processor(entry, function_name, function_ptr, ordinals[i], args->Param))
+					return false;
+			}
+
+			return true;
+		}, &args);
+}
+
+HMODULE GetModuleHandleDirect(fnv1a_t module_name_hash)
+{
+	struct Args_t
+	{
+		HMODULE Result;
+		uint64_t Hash;
+	} args;
+
+	args.Result = nullptr;
+	args.Hash = module_name_hash;
+
+	EnumModules(+[](PLDR_DATA_TABLE_ENTRY entry, LPVOID param) -> bool
+		{
+			Args_t *args = reinterpret_cast<Args_t *>(param);
+
+			if (FNV1a64(entry->BaseDllName.Buffer) == args->Hash)
+			{
+				args->Result = reinterpret_cast<HMODULE>(entry->DllBase);
+				return false;
+			}
+
+			return true;
+		}, &args);
+
+	return args.Result;
 }
 
 void *GetProcAddressDirect(fnv1a_t module_name_hash, fnv1a_t function_name_hash)
 {
-	HMODULE hModule = GetModuleHandleDirect(module_name_hash);
-	if (!hModule)
-		return NULL;
-
-	PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)hModule;
-	PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((PBYTE)hModule + dosHeader->e_lfanew);
-	PIMAGE_EXPORT_DIRECTORY exportDir = (PIMAGE_EXPORT_DIRECTORY)((PBYTE)hModule + ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
-	DWORD exportSize = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
-
-	if (!exportDir || exportSize == 0)
-		return NULL;
-
-	PDWORD functions = (PDWORD)((PBYTE)hModule + exportDir->AddressOfFunctions);
-	PDWORD names = (PDWORD)((PBYTE)hModule + exportDir->AddressOfNames);
-	PWORD ordinals = (PWORD)((PBYTE)hModule + exportDir->AddressOfNameOrdinals);
-
-	for (DWORD i = 0; i < exportDir->NumberOfNames; i++)
+	struct Args_t
 	{
-		char *function_name = (char *)(reinterpret_cast<uintptr_t>(hModule) + names[i]);
+		uint64_t ModuleHash;
+		uint64_t SymbolHash;
+		void *Result;
+	} args;
 
-		if (FNV1a64(function_name) == function_name_hash)
-			return (void *)((PBYTE)hModule + functions[ordinals[i]]);
-	}
+	args.ModuleHash = module_name_hash;
+	args.SymbolHash = function_name_hash;
+	args.Result = nullptr;
 
-	return NULL;
+	EnumExports(NULL, +[](PLDR_DATA_TABLE_ENTRY entry, const char *name, void *address, WORD ordinal, LPVOID param) -> bool
+		{
+			Args_t *args = reinterpret_cast<Args_t *>(param);
+
+			if (args->ModuleHash != 0 && FNV1a64(entry->BaseDllName.Buffer) != args->ModuleHash)
+				return true;
+
+			if (FNV1a64(name) == args->SymbolHash)
+			{
+				args->Result = address;
+				return false;
+			}
+
+			return true;
+		}, &args);
+
+	return args.Result;
+}
+
+void *GetProcAddressDirect(fnv1a_t function_name_hash)
+{
+	return GetProcAddressDirect(0, function_name_hash);
 }
 
 using CreateInterfaceFn_t = void *(*)(const char *name, int *returnCode);

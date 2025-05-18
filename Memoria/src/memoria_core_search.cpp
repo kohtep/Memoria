@@ -363,7 +363,7 @@ void *FindRelative(const void *addr_start, const void *addr_min, const void *add
 		MemFill(&hs, 0, sizeof(hde64s));
 		hde64_disasm(result, &hs);
 
-		if (hs.flags & F_RELATIVE)
+		if (hs.flags & F64_RELATIVE)
 		{
 			if (opcode != 0)
 			{

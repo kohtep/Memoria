@@ -9,6 +9,12 @@
 
 #include "memoria_utils_assert.hpp"
 
+#include "memoria_utils_secure.hpp"
+
+#ifdef MEMORIA_USE_LAZYIMPORT
+	#define GetModuleHandleA    LI_FN(GetModuleHandleA)
+#endif
+
 MEMORIA_BEGIN
 
 CMemoryBlock::CMemoryBlock(const void *address, size_t size)
@@ -248,7 +254,7 @@ std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromLibrary(const char *libn
 	HMODULE handle;
 
 	if (!libname || !*libname)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 	else
 		handle = GetModuleHandleA(libname);
 
@@ -264,7 +270,7 @@ std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromLibrary(const char *libn
 std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromHandle(HMODULE handle, size_t size)
 {
 	if (handle == 0)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (handle == 0)
 		return {};

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "memoria_common.hpp"
+#include "memoria_core_hash.hpp"
 #include "memoria_utils_assert.hpp"
+#include "memoria_core_misc.hpp"
 
 #include <stdint.h>
 #include <limits>
@@ -262,6 +264,53 @@ public:
 
 #pragma pack(pop)
 
+template <FNV1a64_t DllName, FNV1a64_t FuncName, typename T>
+class CLazyImportFunc
+{
+	using T_t = std::remove_pointer_t<T>;
+
+	T _ptr = nullptr;
+
+	T GetFunction()
+	{
+		if (!_ptr)
+			_ptr = reinterpret_cast<T>(Memoria::GetProcAddressDirect(DllName.Hash, FuncName.Hash));
+
+		return _ptr;
+	}
+
+public:
+	template <typename... Args>
+	__forceinline auto operator()(Args&&... args) -> decltype(std::declval<T_t>()(std::forward<Args>(args)...))
+	{
+		using ReturnT = decltype(std::declval<T_t>()(std::forward<Args>(args)...));
+
+		if (auto fn = GetFunction(); fn != nullptr)
+		{
+			if constexpr (std::is_void_v<ReturnT>)
+				fn(std::forward<Args>(args)...);
+			else
+				return fn(std::forward<Args>(args)...);
+		}
+		else
+		{
+			if constexpr (!std::is_void_v<ReturnT>)
+				return {};
+		}
+	}
+
+	explicit operator bool()
+	{
+		return GetFunction() != nullptr;
+	}
+};
+
 MEMORIA_END
 
 #define STRING(str) []() [[msvc::forceinline]] { constexpr auto s = Memoria::CSecureString(str); return s; }().c_str()
+
+#define LI_FN(func) Memoria::CLazyImportFunc<"", #func, decltype(&func)>()
+#define LI_FN_EX(dll, func) Memoria::CLazyImportFunc<dll, #func, decltype(&func)>()
+
+#define LI_FN_DECL(func) Memoria::CLazyImportFunc<"", #func, decltype(&func)> func;
+#define LI_FN_DECL_EX(dll, func) Memoria::CLazyImportFunc<dll, #func, decltype(&func)> func;

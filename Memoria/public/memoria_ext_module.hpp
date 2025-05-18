@@ -13,7 +13,7 @@ MEMORIA_BEGIN
 
 class CMemoryBlock
 {
-protected:
+public:
 	using SigCallbackFn = void (*)(CSigHandle &, void *lpParam);
 
 private:

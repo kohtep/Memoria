@@ -67,8 +67,8 @@ public:
 	// CMP BYTE PTR [RIP+0x12345678], 0x7F
 	// 80 3D [XX XX XX XX] 7F
 	//
-	// Where 'XX XX XX XX' is 0x12345678, followed by 0x7F. In this case, 'additional_offset' should be set to '1'.
-	bool WriteRelative(const void *addr_target, const void *addr_value, ptrdiff_t additional_offset = 0);
+	// Where 'XX XX XX XX' is 0x12345678, followed by 0x7F. In this case, 'additional_offset' should be set to '2'.
+	bool WriteRelative(const void *addr_target, const void *addr_value, ptrdiff_t additional_offset = 1);
 
 	void WriteString(const char *str);
 	void WriteData(const void *src, size_t size);

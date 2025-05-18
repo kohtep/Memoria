@@ -57,9 +57,6 @@
     <ClCompile Include="..\src\memoria_core_write.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\memoria_ext_hook.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\memoria_ext_logger.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -90,18 +87,6 @@
     <ClCompile Include="..\src\memoria_utils_string.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\memoria_captura_function.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\memoria_captura_hook32.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\memoria_captura_hook64.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\memoria_captura_trampoline.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\memoria_common.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -113,6 +98,12 @@
     </ClCompile>
     <ClCompile Include="..\..\vendor\hde\src\hde_utils.c">
       <Filter>vendor\hde\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memoria_core_hook.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memoria_utils_unicode.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -170,9 +161,6 @@
     <ClInclude Include="..\public\memoria_core_write.hpp">
       <Filter>public</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\memoria_ext_hook.hpp">
-      <Filter>public</Filter>
-    </ClInclude>
     <ClInclude Include="..\public\memoria_ext_logger.hpp">
       <Filter>public</Filter>
     </ClInclude>
@@ -215,23 +203,20 @@
     <ClInclude Include="..\public\memoria_amalgamation.hpp">
       <Filter>public</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\memoria_captura_common.hpp">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\memoria_captura_function.hpp">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\memoria_captura_hook32.hpp">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\memoria_captura_hook64.hpp">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\memoria_captura_trampoline.hpp">
-      <Filter>public</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\vendor\hde\public\hde_utils.h">
       <Filter>vendor\hde\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\memoria_core_hook.hpp">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vendor\hde\public\hde_common.h">
+      <Filter>vendor\hde\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\memoria_config.hpp">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\memoria_utils_unicode.hpp">
+      <Filter>public</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

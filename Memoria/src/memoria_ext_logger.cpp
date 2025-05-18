@@ -9,6 +9,16 @@
 #include <stdarg.h>
 #include <Windows.h>
 
+#include "memoria_utils_secure.hpp"
+
+#ifdef MEMORIA_USE_LAZYIMPORT
+	#define AllocConsole       LI_FN(AllocConsole)
+	#define FreeConsole        LI_FN(FreeConsole)
+	#define GetConsoleWindow   LI_FN(GetConsoleWindow)
+	#define GetStdHandle       LI_FN(GetStdHandle)
+	#define WriteConsoleA      LI_FN(WriteConsoleA)
+#endif
+
 MEMORIA_BEGIN
 
 static Memoria::FixedVector<LoggerCallback_t, 32> LoggerFns;
@@ -29,7 +39,7 @@ static void LogToConsole(const char *text)
 		WriteConsoleA(ghConsoleHandle, text, (DWORD)StrLenA(text), &written, nullptr);
 
 		char newline = '\n';
-		WriteConsoleA(ghConsoleHandle, &newline, sizeof(newline), &written, nullptr);
+		WriteConsoleA(ghConsoleHandle, &newline, (DWORD)sizeof(newline), &written, nullptr);
 	}
 }
 

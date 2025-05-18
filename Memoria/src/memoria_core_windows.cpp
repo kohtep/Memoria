@@ -5,8 +5,17 @@
 
 #include <VersionHelpers.h>
 #include <string_view>
+#include <TlHelp32.h>
+
+#include "memoria_utils_secure.hpp"
+
+#ifdef MEMORIA_USE_LAZYIMPORT
+	#define GetModuleHandleA    LI_FN(GetModuleHandleA)
+#endif
 
 MEMORIA_BEGIN
+
+// GetModuleHandleA
 
 using SectionCallbackFn = bool(*)(PIMAGE_SECTION_HEADER section, LPVOID param);
 
@@ -16,7 +25,7 @@ void EnumSections(HMODULE handle, SectionCallbackFn cb, LPVOID param)
 		return;
 
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (!handle)
 		return;
@@ -38,7 +47,7 @@ void EnumSections(HMODULE handle, SectionCallbackFn cb, LPVOID param)
 PIMAGE_SECTION_HEADER GetSectionByIndex(HMODULE handle, DWORD image_directory)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (!handle)
 		return nullptr;
@@ -67,7 +76,7 @@ PIMAGE_SECTION_HEADER GetSectionByIndex(HMODULE handle, DWORD image_directory)
 PIMAGE_SECTION_HEADER GetSectionByFlags(HMODULE handle, DWORD flags, bool match_exactly)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (!handle)
 		return nullptr;
@@ -132,7 +141,7 @@ PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const char *name)
 PIMAGE_SECTION_HEADER GetEntrySection(HMODULE handle)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (!handle)
 		return nullptr;
@@ -159,7 +168,7 @@ PIMAGE_SECTION_HEADER GetEntrySection(HMODULE handle)
 std::pair<PVOID, PVOID> GetSectionBounds(HMODULE handle, PIMAGE_SECTION_HEADER section)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (!handle)
 		return {};
@@ -186,7 +195,7 @@ std::pair<PVOID, PVOID> GetSectionBounds(PIMAGE_SECTION_HEADER section)
 void *GetImageBase(HMODULE handle)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (!handle)
 		return nullptr;
@@ -222,7 +231,7 @@ void *GetImageBase(const char *name)
 std::pair<WORD, WORD> GetModuleVersion(HMODULE handle)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (!handle)
 		return { 0, 0 };
@@ -260,7 +269,7 @@ std::pair<WORD, WORD> GetModuleVersion(const char *name)
 DWORD GetModuleSize(HMODULE handle)
 {
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	PIMAGE_DOS_HEADER dos = reinterpret_cast<PIMAGE_DOS_HEADER>(handle);
 	PIMAGE_NT_HEADERS nt = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<uintptr_t>(dos) + dos->e_lfanew);
@@ -273,7 +282,7 @@ Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle)
 	Memoria::Vector<ExportFunc_t> exports;
 
 	if (!handle)
-		handle = GetModuleHandleA(0);
+		handle = GetModuleHandleA(nullptr);
 
 	if (!handle)
 		return exports;
@@ -316,6 +325,38 @@ Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle)
 	}
 
 	return exports;
+}
+
+DWORD GetMainThreadId()
+{
+	auto hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	if (hThreadSnap == INVALID_HANDLE_VALUE)
+		return 0;
+
+	THREADENTRY32 te32;
+	te32.dwSize = sizeof(THREADENTRY32);
+
+	if (!Thread32First(hThreadSnap, &te32))
+	{
+		CloseHandle(hThreadSnap);
+		return 0;
+	}
+
+	DWORD result = 0;
+	int cur_tid = GetCurrentProcessId();
+
+	do
+	{
+		if (te32.th32OwnerProcessID == cur_tid)
+		{
+			result = te32.th32ThreadID;
+			break;
+		}
+	} while (Thread32Next(hThreadSnap, &te32));
+
+	CloseHandle(hThreadSnap);
+
+	return result;
 }
 
 MEMORIA_END

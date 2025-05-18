@@ -130,4 +130,6 @@ struct ExportFunc_t
 
 extern Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle);
 
+extern DWORD GetMainThreadId();
+
 MEMORIA_END

@@ -7,6 +7,15 @@
 #include <stdint.h>
 #include <Windows.h>
 
+#include "memoria_utils_secure.hpp"
+
+#ifdef MEMORIA_USE_LAZYIMPORT
+	#define GetLocaleInfoA     LI_FN(GetLocaleInfoA)
+	#define GetLastError       LI_FN(GetLastError)
+	#define GetLocalTime       LI_FN(GetLocalTime)
+	#define FormatMessageA     LI_FN(FormatMessageA)
+#endif
+
 MEMORIA_BEGIN
 
 struct FormatModifiers
@@ -234,10 +243,10 @@ static int HandleTime(char *&pOut, size_t &remaining, va_list &, const FormatMod
 	GetLocalTime(&st);
 
 	char sep[4] = ":";
-	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_STIME, sep, sizeof(sep));
+	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_STIME, sep, (DWORD)sizeof(sep));
 
 	char timeFmt[2] = "1";
-	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_ITIME, timeFmt, sizeof(timeFmt));
+	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_ITIME, timeFmt, (DWORD)sizeof(timeFmt));
 	bool is24Hour = (timeFmt[0] == '1');
 
 	int hour = st.wHour;
@@ -295,10 +304,10 @@ static int HandleDate(char *&pOut, size_t &remaining, va_list &, const FormatMod
 	GetLocalTime(&st);
 
 	char sep[4] = "/";
-	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SDATE, sep, sizeof(sep));
+	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_SDATE, sep, (DWORD)sizeof(sep));
 
 	char orderStr[2] = "0";
-	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_IDATE, orderStr, sizeof(orderStr));
+	GetLocaleInfoA(LOCALE_USER_DEFAULT, LOCALE_IDATE, orderStr, (DWORD)sizeof(orderStr));
 	int order = orderStr[0] - '0'; // 0 = MDY, 1 = DMY, 2 = YMD
 
 	char temp[16];
@@ -363,7 +372,7 @@ static int HandleLastError(char *&pOut, size_t &remaining, va_list &, const Form
 		errorCode,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		temp,
-		sizeof(temp) - 1,
+		DWORD(sizeof(temp) - 1),
 		nullptr);
 
 	if (len > 0)
@@ -638,6 +647,21 @@ int FormatBufSafe(char *lpBuffer, size_t dwMaxSize, const char *lpFormat, ...)
 	int result = FormatBufSafeV(lpBuffer, dwMaxSize, lpFormat, args);
 	va_end(args);
 	return result;
+}
+
+static int va_current = 0;
+static char va_string[16][1024];
+
+char *VFormatBufSafe(const char *lpFormat, ...)
+{
+	va_list argptr;
+	va_current = (va_current + 1) % 16;
+
+	va_start(argptr, lpFormat);
+	FormatBufSafe(va_string[va_current], _countof(va_string[va_current]), lpFormat, argptr);
+	va_end(argptr);
+
+	return va_string[va_current];
 }
 
 MEMORIA_END

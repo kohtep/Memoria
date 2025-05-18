@@ -12,6 +12,27 @@
 MEMORIA_BEGIN
 
 /**
+ * @brief Performs an offset relative to `addr` forward or backward by the value of `offset`.
+ *
+ * @param addr The starting address.
+ * @param offset The value for the offset; can be positive (forward offset) or
+ *               negative (backward offset).
+ * @param dereference If `true`, the function will dereference the specified address
+ *                    (after applying the offset) and return the result.
+ *
+ * @return The new address value after the offset or the dereferenced result if `dereference` is true.
+ */
+static __forceinline void *PtrOffset(const void *addr, ptrdiff_t offset, bool dereference = false)
+{
+	void *result = reinterpret_cast<void *>(reinterpret_cast<intptr_t>(addr) + offset);
+
+	if (dereference)
+		result = *reinterpret_cast<void **>(result);
+
+	return result;
+}
+
+/**
  * @brief Converts the relative offset, at which it is located,
  *        to an absolute address relative to `addr`.
  *
@@ -20,7 +41,10 @@ MEMORIA_BEGIN
  *
  * @return The absolute address relative to `addr` where the offset is located.
  */
-extern void *RelToAbs(const void *addr, ptrdiff_t offset = 0);
+static __forceinline void *RelToAbs(const void *addr, ptrdiff_t offset = 0)
+{
+	return PtrOffset(addr, *static_cast<const int32_t *>(addr) + offset);
+}
 
 /**
  * @brief Converts the relative offset, at which it is located,
@@ -32,7 +56,10 @@ extern void *RelToAbs(const void *addr, ptrdiff_t offset = 0);
  *
  * @return The absolute address relative to `addr` where the offset is located.
  */
-extern void *RelToAbsEx(const void *addr, ptrdiff_t pre_offset, ptrdiff_t post_offset);
+static __forceinline void *RelToAbsEx(const void *addr, ptrdiff_t pre_offset, ptrdiff_t post_offset)
+{
+	return RelToAbs(reinterpret_cast<void *>(ptrdiff_t(addr) + pre_offset), post_offset);
+}
 
 /**
  * @brief Forms an offset relative to `base` for the address `addr`.
@@ -46,20 +73,11 @@ extern void *RelToAbsEx(const void *addr, ptrdiff_t pre_offset, ptrdiff_t post_o
  * @see CWriteBuffer::WriteRelative
  * @return The offset relative to `base` for the address `addr`, or `0` if offset cannot be calculated.
  */
-extern int32_t CalcRel(const void *base, void *addr, size_t imm_size = sizeof(int32_t));
-
-/**
- * @brief Performs an offset relative to `addr` forward or backward by the value of `offset`.
- *
- * @param addr The starting address.
- * @param offset The value for the offset; can be positive (forward offset) or
- *               negative (backward offset).
- * @param dereference If `true`, the function will dereference the specified address
- *                    (after applying the offset) and return the result.
- *
- * @return The new address value after the offset or the dereferenced result if `dereference` is true.
- */
-extern void *PtrOffset(const void *addr, ptrdiff_t offset, bool dereference = false);
+static __forceinline int32_t CalcRel(const void *base, void *addr, size_t imm_size = sizeof(int32_t))
+{
+	intptr_t offset = reinterpret_cast<intptr_t>(PtrOffset(base, -reinterpret_cast<intptr_t>(addr) - imm_size));
+	return static_cast<int32_t>(offset);
+}
 
 /**
  * @brief Performs an offset relative to `addr` forward by the value of `offset`.
@@ -71,7 +89,15 @@ extern void *PtrOffset(const void *addr, ptrdiff_t offset, bool dereference = fa
  *
  * @return The new address value after the offset or the dereferenced result if `dereference` is true.
  */
-extern void *PtrAdvance(const void *addr, size_t offset, bool dereference = false);
+static __forceinline void *PtrAdvance(const void *addr, size_t offset, bool dereference = false)
+{
+	void *result = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset);
+
+	if (dereference)
+		result = *reinterpret_cast<void **>(result);
+
+	return result;
+}
 
 /**
  * @brief Performs an offset relative to `addr` backward by the value of `offset`.
@@ -83,7 +109,15 @@ extern void *PtrAdvance(const void *addr, size_t offset, bool dereference = fals
  *
  * @return The new address value after the offset or the dereferenced result if `dereference` is true.
  */
-extern void *PtrRewind(const void *addr, size_t offset, bool dereference = false);
+static __forceinline void *PtrRewind(const void *addr, size_t offset, bool dereference = false)
+{
+	void *result = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) - offset);
+
+	if (dereference)
+		result = *reinterpret_cast<void **>(result);
+
+	return result;
+}
 
 /**
  * @brief
@@ -92,7 +126,16 @@ extern void *PtrRewind(const void *addr, size_t offset, bool dereference = false
  *
  * @return
  */
-extern bool IsInBounds(uintptr_t addr, uintptr_t addr_lower, uintptr_t addr_upper);
+static __forceinline bool IsInBounds(uintptr_t addr, uintptr_t addr_lower, uintptr_t addr_upper)
+{
+	if (addr < addr_lower)
+		return false;
+
+	if (addr >= addr_upper)
+		return false;
+
+	return true;
+}
 
 /**
  * @brief
@@ -101,7 +144,17 @@ extern bool IsInBounds(uintptr_t addr, uintptr_t addr_lower, uintptr_t addr_uppe
  *
  * @return
  */
-extern bool IsInBounds(const void *addr, const void *addr_lower, const void *addr_upper);
+static __forceinline bool IsInBounds(const void *addr, const void *addr_lower, const void *addr_upper)
+{
+	auto naddr = reinterpret_cast<uintptr_t>(addr);
+	auto lower = reinterpret_cast<uintptr_t>(addr_lower);
+	auto upper = reinterpret_cast<uintptr_t>(addr_upper);
+
+	return IsInBounds(naddr, lower, upper);
+}
+
+#pragma push_macro("max")
+#undef max
 
 /**
  * @brief
@@ -110,7 +163,13 @@ extern bool IsInBounds(const void *addr, const void *addr_lower, const void *add
  *
  * @return
  */
-extern bool IsIn32BitRange(uintptr_t addr1, uintptr_t addr2, ptrdiff_t offset = 0);
+static __forceinline bool IsIn32BitRange(uintptr_t addr1, uintptr_t addr2, ptrdiff_t offset = 0)
+{
+	uintptr_t adjusted_addr2 = static_cast<uintptr_t>(static_cast<ptrdiff_t>(addr2) + offset);
+	uintptr_t diff = (addr1 > adjusted_addr2) ? (addr1 - adjusted_addr2) : (adjusted_addr2 - addr1);
+
+	return diff <= std::numeric_limits<uint32_t>::max();
+}
 
 /**
  * @brief
@@ -119,7 +178,17 @@ extern bool IsIn32BitRange(uintptr_t addr1, uintptr_t addr2, ptrdiff_t offset = 
  *
  * @return
  */
-extern bool IsIn32BitRange(const void *addr1, const void *addr2, ptrdiff_t offset = 0);
+static __forceinline bool IsIn32BitRange(const void *addr1, const void *addr2, ptrdiff_t offset = 0)
+{
+	uintptr_t ptr1 = reinterpret_cast<uintptr_t>(addr1);
+	uintptr_t ptr2 = reinterpret_cast<uintptr_t>(addr2);
+	uintptr_t adjusted_ptr2 = static_cast<uintptr_t>(static_cast<ptrdiff_t>(ptr2) + offset);
+	uintptr_t diff = (ptr1 > adjusted_ptr2) ? (ptr1 - adjusted_ptr2) : (adjusted_ptr2 - ptr1);
+
+	return diff <= std::numeric_limits<uint32_t>::max();
+}
+
+#pragma pop_macro("max")
 
 /**
  * @brief
@@ -273,6 +342,8 @@ extern DWORD BeginThread(void (*fnFunction)(LPVOID), LPVOID param);
  * @return
  */
 extern HMODULE GetModuleHandleDirect(fnv1a_t module_name_hash);
+
+extern void *GetProcAddressDirect(fnv1a_t function_name_hash);
 
 /**
  * @brief
