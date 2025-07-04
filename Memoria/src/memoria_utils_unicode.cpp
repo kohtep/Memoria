@@ -1,5 +1,6 @@
-#include "memoria_utils_unicode.hpp"
+﻿#include "memoria_utils_unicode.hpp"
 
+#include <Windows.h>
 #include <memory>
 
 MEMORIA_BEGIN
@@ -7,15 +8,21 @@ MEMORIA_BEGIN
 CUTF8Char::CUTF8Char()
 {
 	memset(_bytes, 0, kMaxUtf8CharSize);
-	_size = 0;
 }
 
-CUTF8Char::CUTF8Char(const char *data, size_t length)
+CUTF8Char::CUTF8Char(const char *data)
 {
+	if (!data || !*data)
+	{
+		memset(_bytes, 0, kMaxUtf8CharSize);
+		return;
+	}
+
+	size_t length = Utf8SeqLength(data[0]);
+
 	if (length > kMaxUtf8CharSize)
 	{
 		memset(_bytes, 0, kMaxUtf8CharSize);
-		_size = 0;
 		return;
 	}
 
@@ -38,8 +45,6 @@ CUTF8Char::CUTF8Char(const char *data, size_t length)
 	default:
 		break;
 	}
-
-	_size = static_cast<uint8_t>(Utf8SeqLength(_bytes[0]));
 }
 
 const char *CUTF8Char::data() const
@@ -49,7 +54,7 @@ const char *CUTF8Char::data() const
 
 size_t CUTF8Char::size() const
 {
-	return _size;
+	return Utf8SeqLength(_bytes[0]);
 }
 
 bool CUTF8Char::empty() const
@@ -198,9 +203,122 @@ size_t CUChar::decode_utf32(const char *buffer)
 	return DecodeUtf32(buffer, _value);
 }
 
-CUTF8StringBase::CUTF8StringBase()
-	: _buffer(nullptr), _length(0), _capacity(0)
+static uint32_t UnicodeToUpper(uint32_t cp)
 {
+	//
+	// ASCII
+	//
+
+	if (cp >= 'a' && cp <= 'z')
+		return cp - 32;
+
+	//
+	// Latin with diacritics (partially)
+	//
+
+	if (cp >= 0x00E0 && cp <= 0x00F6)
+		return cp - 0x20; // à–ö
+	if (cp >= 0x00F8 && cp <= 0x00FE)
+		return cp - 0x20; // ø–þ
+
+	if (cp == 0x00FF)
+		return 0x0178; // ÿ → Ÿ
+
+	//
+	// Cyrillic
+	//
+
+	if (cp >= 0x0430 && cp <= 0x044F)
+		return cp - 0x20; // а–я → А–Я
+
+	if (cp == 0x0451)
+		return 0x0401; // ё → Ё
+
+	return cp;
+}
+
+static uint32_t UnicodeToLower(uint32_t cp)
+{
+	//
+	// ASCII
+	//
+
+	if (cp >= 'A' && cp <= 'Z')
+		return cp + 32;
+
+	//
+	// Latin with diacritics (partially)
+	//
+
+	if (cp >= 0x00C0 && cp <= 0x00D6)
+		return cp + 0x20; // À–Ö
+	if (cp >= 0x00D8 && cp <= 0x00DE)
+		return cp + 0x20; // Ø–Þ
+
+	if (cp == 0x0178)
+		return 0x00FF; // Ÿ → ÿ
+
+	//
+	// Cyrillic
+	//
+
+	if (cp >= 0x0410 && cp <= 0x042F)
+		return cp + 0x20; // А–Я -> а–я
+
+	if (cp == 0x0401)
+		return 0x0451; // Ё -> ё
+
+	return cp;
+}
+
+bool CUTF8StringBase::transform_case(eStringCase mode)
+{
+	if (!_buffer || _length == 0)
+		return true;
+
+	size_t offset = 0;
+
+	while (offset < _length)
+	{
+		uint32_t codepoint;
+		size_t original_len = DecodeUtf8(_buffer + offset, codepoint);
+		if (original_len == 0)
+			return false;
+
+		uint32_t new_cp = codepoint;
+		if (mode == eStringCase::Lower)
+			new_cp = UnicodeToLower(codepoint);
+		else if (mode == eStringCase::Upper)
+			new_cp = UnicodeToUpper(codepoint);
+
+		char encoded[kMaxUtf8CharSize];
+		size_t new_len = EncodeUtf8(new_cp, encoded);
+		if (new_len == 0)
+			return false;
+
+		ptrdiff_t diff = static_cast<ptrdiff_t>(new_len) - static_cast<ptrdiff_t>(original_len);
+
+		if (diff > 0)
+		{
+			if (_length + diff >= _capacity)
+				return false;
+
+			memmove(_buffer + offset + new_len, _buffer + offset + original_len, _length - offset - original_len);
+		}
+		else if (diff < 0)
+		{
+			memmove(_buffer + offset + new_len, _buffer + offset + original_len, _length - offset - original_len);
+		}
+
+		for (size_t i = 0; i < new_len; ++i)
+			_buffer[offset + i] = encoded[i];
+
+		offset += new_len;
+		_length += diff;
+	}
+
+	_buffer[_length] = '\0';
+	return true;
 }
 
 bool CUTF8StringBase::ensure_capacity(size_t additional_size)
@@ -226,12 +344,12 @@ bool CUTF8StringBase::ensure_capacity(size_t additional_size)
 
 const char *CUTF8StringBase::c_str() const
 {
-	return _buffer;
+	return _buffer ? _buffer : "";
 }
 
 const char *CUTF8StringBase::data() const
 {
-	return _buffer;
+	return _buffer ? _buffer : "";
 }
 
 size_t CUTF8StringBase::size() const
@@ -246,26 +364,21 @@ bool CUTF8StringBase::empty() const
 
 void CUTF8StringBase::clear()
 {
-	_length = 0;
-
 	if (_buffer)
-		memset(_buffer, 0, _capacity);
+	{
+		memset(_buffer, 0, _length + 1);
+		_length = 0;
+	}
+	else
+	{
+		_length = 0;
+	}
 }
 
 bool CUTF8StringBase::push_back(uint32_t codepoint)
 {
-	if (_length + kMaxUtf8CharSize >= _capacity)
-	{
-		if (!_expandable)
-			return false;
-
-		char *buffer = reinterpret_cast<char *>(realloc(_buffer, _capacity + 256));
-		if (!buffer)
-			return false;
-
-		_capacity += 256;
-		_buffer = buffer;
-	}
+	if (!ensure_capacity(kMaxUtf8CharSize + 1)) // +1 for '\0'
+		return false;
 
 	char temp[kMaxUtf8CharSize];
 	size_t char_len = EncodeUtf8(codepoint, temp);
@@ -303,15 +416,36 @@ bool CUTF8StringBase::pop_back()
 
 bool CUTF8StringBase::from_string(const char *str)
 {
+	if (!str)
+		return false;
+
+	_length = 0;
+
+	if (_expandable && _buffer)
+	{
+		free(_buffer);
+		_buffer = nullptr;
+		_capacity = 0;
+	}
+
+	if (!ensure_capacity(1))
+		return false;
+
 	size_t offset = 0;
 	while (str[offset] != '\0')
 	{
-		size_t char_len;
+		size_t char_len = 0;
 		if (!IsValidUtf8Char(str + offset, static_cast<size_t>(-1), &char_len))
+		{
+			clear();
 			return false;
+		}
 
-		if (!ensure_capacity(char_len))
+		if (!ensure_capacity(char_len + 1)) // +1 for '\0'
+		{
+			clear();
 			return false;
+		}
 
 		for (size_t i = 0; i < char_len; ++i)
 			_buffer[_length + i] = str[offset + i];
@@ -326,6 +460,9 @@ bool CUTF8StringBase::from_string(const char *str)
 
 bool CUTF8StringBase::append(const char *str)
 {
+	if (!str)
+		return false;
+
 	size_t offset = 0;
 
 	while (str[offset] != '\0')
@@ -361,30 +498,106 @@ CUTF8String::CUTF8String()
 	_expandable = true;
 }
 
-CUTF8String::CUTF8String(const char *text)
+CUTF8String::CUTF8String(const char *text) : CUTF8String()
 {
-	_buffer = nullptr;
-	_length = 0;
-	_capacity = 0;
-	_expandable = true;
-
 	if (!from_string(text))
 		clear();
 }
 
-CUTF8String::CUTF8String(const char8_t *text)
+CUTF8String::CUTF8String(const char8_t *text) : CUTF8String()
 {
-	_buffer = nullptr;
-	_length = 0;
-	_capacity = 0;
-	_expandable = true;
-
 	if (!from_string(reinterpret_cast<const char *>(text)))
 		clear();
 }
 
+CUTF8String::~CUTF8String()
+{
+	free(_buffer);
+}
+
+CUTF8String::CUTF8String(const CUTF8String &other)
+{
+	_expandable = true;
+	_length = other._length;
+	_capacity = other._length + 1;
+
+	_buffer = static_cast<char *>(malloc(_capacity));
+	if (_buffer && other._buffer)
+	{
+		memcpy(_buffer, other._buffer, _length);
+		_buffer[_length] = '\0';
+	}
+	else
+	{
+		_buffer = nullptr;
+		_length = 0;
+		_capacity = 0;
+	}
+}
+
+CUTF8String &CUTF8String::operator=(const CUTF8String &other)
+{
+	if (this == &other)
+		return *this;
+
+	char *new_buffer = static_cast<char *>(malloc(other._length + 1));
+	if (!new_buffer)
+	{
+		clear();
+		return *this;
+	}
+
+	if (_buffer)
+		free(_buffer);
+
+	_buffer = new_buffer;
+	_length = other._length;
+	_capacity = other._length + 1;
+	_expandable = true;
+
+	memcpy(_buffer, other._buffer, _length);
+	_buffer[_length] = '\0';
+
+	return *this;
+}
+
+CUTF8String::CUTF8String(CUTF8String &&other) noexcept
+{
+	_buffer = other._buffer;
+	_length = other._length;
+	_capacity = other._capacity;
+	_expandable = true;
+
+	other._buffer = nullptr;
+	other._length = 0;
+	other._capacity = 0;
+}
+
+CUTF8String &CUTF8String::operator=(CUTF8String &&other) noexcept
+{
+	if (this == &other)
+		return *this;
+
+	if (_buffer)
+		free(_buffer);
+
+	_buffer = other._buffer;
+	_length = other._length;
+	_capacity = other._capacity;
+	_expandable = true;
+
+	other._buffer = nullptr;
+	other._length = 0;
+	other._capacity = 0;
+
+	return *this;
+}
+
 CUTF8String &CUTF8String::operator=(const char *text)
 {
+	if (text == _buffer)
+		return *this;
+
 	if (!from_string(text))
 		clear();
 
@@ -393,7 +606,11 @@ CUTF8String &CUTF8String::operator=(const char *text)
 
 CUTF8String &CUTF8String::operator=(const char8_t *text)
 {
-	if (!from_string(reinterpret_cast<const char *>(text)))
+	const char *ptr = reinterpret_cast<const char *>(text);
+	if (ptr == _buffer)
+		return *this;
+
+	if (!from_string(ptr))
 		clear();
 
 	return *this;
@@ -411,34 +628,17 @@ bool IsValidUnicode(uint32_t value)
 
 bool IsValidUtf8Char(const char *utf8, size_t size, size_t *length)
 {
-	if (size == 0)
+	if (size == 0 || utf8 == nullptr)
 		return false;
-
-	if (size == static_cast<size_t>(-1))
-	{
-		unsigned char first = static_cast<unsigned char>(utf8[0]);
-		size_t len = Utf8SeqLength(first);
-		uint32_t codepoint;
-		size_t decoded = DecodeUtf8(utf8, codepoint);
-
-		if (decoded != len || !IsValidUnicode(codepoint))
-			return false;
-
-		if (length)
-			*length = len;
-
-		return true;
-	}
 
 	unsigned char first = static_cast<unsigned char>(utf8[0]);
 	size_t len = Utf8SeqLength(first);
 
-	if (len == 0 || len > size)
+	if (len == 0 || (size != static_cast<size_t>(-1) && len > size))
 		return false;
 
 	uint32_t codepoint;
 	size_t decoded = DecodeUtf8(utf8, codepoint);
-
 	if (decoded != len || !IsValidUnicode(codepoint))
 		return false;
 
@@ -450,75 +650,50 @@ bool IsValidUtf8Char(const char *utf8, size_t size, size_t *length)
 
 bool IsValidUtf16Char(const char *utf16, size_t size, size_t *length)
 {
-	if (size < 2 && size != static_cast<size_t>(-1))
-		return false;
-
-	unsigned char high = static_cast<unsigned char>(utf16[0]);
-	unsigned char low = static_cast<unsigned char>(utf16[1]);
-	uint16_t word = (high << 8) | low;
-
-	if (word >= 0xD800 && word <= 0xDBFF)
-	{
-		if (size != static_cast<size_t>(-1) && size < 4)
-			return false;
-
-		unsigned char high2 = static_cast<unsigned char>(utf16[2]);
-		unsigned char low2 = static_cast<unsigned char>(utf16[3]);
-		uint16_t next = (high2 << 8) | low2;
-
-		if (next < 0xDC00 || next > 0xDFFF)
-			return false;
-
-		uint32_t codepoint;
-		DecodeUtf16(utf16, codepoint);
-
-		if (!IsValidUnicode(codepoint))
-			return false;
-
-		if (length)
-			*length = 4;
-
-		return true;
-	}
-	else if (word >= 0xDC00 && word <= 0xDFFF)
-	{
-		return false;
-	}
-	else
-	{
-		uint32_t codepoint;
-		DecodeUtf16(utf16, codepoint);
-
-		if (!IsValidUnicode(codepoint))
-			return false;
-
-		if (length)
-			*length = 2;
-
-		return true;
-	}
-}
-
-bool IsValidUtf32Char(const char *utf32, size_t size, size_t *length)
-{
-	if (size != static_cast<size_t>(-1) && size < 4)
+	if (!utf16 || (size < 2 && size != static_cast<size_t>(-1)))
 		return false;
 
 	uint32_t codepoint;
-	DecodeUtf32(utf32, codepoint);
+	size_t decoded = DecodeUtf16(utf16, codepoint);
+
+	if (decoded == 0)
+		return false;
+
+	if (size != static_cast<size_t>(-1) && decoded > size)
+		return false;
 
 	if (!IsValidUnicode(codepoint))
 		return false;
 
 	if (length)
-		*length = 4;
+		*length = decoded;
+
+	return true;
+}
+
+bool IsValidUtf32Char(const char *utf32, size_t size, size_t *length, bool bigEndian)
+{
+	if (!utf32 || (size != static_cast<size_t>(-1) && size < 4))
+		return false;
+
+	uint32_t codepoint;
+	size_t decoded = DecodeUtf32(utf32, codepoint, bigEndian);
+
+	if (!IsValidUnicode(codepoint))
+		return false;
+
+	if (length)
+		*length = decoded;
 
 	return true;
 }
 
 bool IsValidUtf8String(const char *utf8, size_t size)
 {
+	if (!utf8) return false;
+
 	size_t offset = 0;
+
 	if (size == static_cast<size_t>(-1))
 	{
 		while (utf8[offset] != '\0')
@@ -538,24 +713,26 @@ bool IsValidUtf8String(const char *utf8, size_t size)
 			return false;
 		offset += len;
 	}
+
 	return true;
 }
 
 bool IsValidUtf16String(const char *utf16, size_t size)
 {
+	if (!utf16) return false;
+
 	size_t offset = 0;
+
 	if (size == static_cast<size_t>(-1))
 	{
-		while (true)
+		while (!(utf16[offset] == 0 && utf16[offset + 1] == 0))
 		{
-			if (utf16[offset] == 0 && utf16[offset + 1] == 0)
-				return true;
-
 			size_t len;
 			if (!IsValidUtf16Char(utf16 + offset, static_cast<size_t>(-1), &len))
 				return false;
 			offset += len;
 		}
+		return true;
 	}
 
 	while (offset < size)
@@ -565,34 +742,37 @@ bool IsValidUtf16String(const char *utf16, size_t size)
 			return false;
 		offset += len;
 	}
+
 	return true;
 }
 
-bool IsValidUtf32String(const char *utf32, size_t size)
+bool IsValidUtf32String(const char *utf32, size_t size, bool bigEndian)
 {
+	if (!utf32) return false;
+
 	size_t offset = 0;
+
 	if (size == static_cast<size_t>(-1))
 	{
-		while (true)
+		while (!(utf32[offset] == 0 && utf32[offset + 1] == 0 &&
+			utf32[offset + 2] == 0 && utf32[offset + 3] == 0))
 		{
-			if (utf32[offset] == 0 && utf32[offset + 1] == 0 &&
-				utf32[offset + 2] == 0 && utf32[offset + 3] == 0)
-				return true;
-
 			size_t len;
-			if (!IsValidUtf32Char(utf32 + offset, static_cast<size_t>(-1), &len))
+			if (!IsValidUtf32Char(utf32 + offset, static_cast<size_t>(-1), &len, bigEndian))
 				return false;
 			offset += len;
 		}
+		return true;
 	}
 
 	while (offset < size)
 	{
 		size_t len;
-		if (!IsValidUtf32Char(utf32 + offset, size - offset, &len))
+		if (!IsValidUtf32Char(utf32 + offset, size - offset, &len, bigEndian))
 			return false;
 		offset += len;
 	}
+
 	return true;
 }
 
@@ -631,32 +811,6 @@ size_t Utf8SeqLength(unsigned char first)
 	if ((first & 0xF0) == 0xE0) return 3;
 	if ((first & 0xF8) == 0xF0) return 4;
 	return 0;
-}
-
-bool Utf8Validate(const char *data, size_t size)
-{
-	if (size == 0 || data == nullptr)
-	{
-		return false;
-	}
-
-	unsigned char first = static_cast<unsigned char>(data[0]);
-	size_t len = Utf8SeqLength(first);
-
-	if (len == 0 || len > size)
-	{
-		return false;
-	}
-
-	for (size_t i = 1; i < len; ++i)
-	{
-		if ((static_cast<unsigned char>(data[i]) & 0xC0) != 0x80)
-		{
-			return false;
-		}
-	}
-
-	return true;
 }
 
 size_t EncodeUtf8(uint32_t value, char *buffer)
@@ -703,22 +857,35 @@ size_t EncodeUtf16(uint32_t value, char *buffer)
 		return 2;
 	}
 
-	uint32_t code_point = value - 0x10000;
+	uint32_t cp = value - 0x10000;
+	uint16_t high = 0xD800 + (cp >> 10);
+	uint16_t low = 0xDC00 + (cp & 0x3FF);
 
-	buffer[0] = static_cast<char>(0xD8 | (code_point >> 10));
-	buffer[1] = static_cast<char>((code_point >> 2) & 0xFF);
-	buffer[2] = static_cast<char>(0xDC | (code_point & 0x3FF));
-	buffer[3] = static_cast<char>((code_point >> 8) & 0xFF);
+	buffer[0] = static_cast<char>(high >> 8);
+	buffer[1] = static_cast<char>(high & 0xFF);
+	buffer[2] = static_cast<char>(low >> 8);
+	buffer[3] = static_cast<char>(low & 0xFF);
 
 	return 4;
 }
 
-size_t EncodeUtf32(uint32_t value, char *buffer)
+size_t EncodeUtf32(uint32_t value, char *buffer, bool bigEndian)
 {
-	buffer[0] = static_cast<char>(value >> 24);
-	buffer[1] = static_cast<char>((value >> 16) & 0xFF);
-	buffer[2] = static_cast<char>((value >> 8) & 0xFF);
-	buffer[3] = static_cast<char>(value & 0xFF);
+	if (bigEndian)
+	{
+		buffer[0] = static_cast<char>((value >> 24) & 0xFF);
+		buffer[1] = static_cast<char>((value >> 16) & 0xFF);
+		buffer[2] = static_cast<char>((value >> 8) & 0xFF);
+		buffer[3] = static_cast<char>(value & 0xFF);
+	}
+	else
+	{
+		buffer[3] = static_cast<char>((value >> 24) & 0xFF);
+		buffer[2] = static_cast<char>((value >> 16) & 0xFF);
+		buffer[1] = static_cast<char>((value >> 8) & 0xFF);
+		buffer[0] = static_cast<char>(value & 0xFF);
+	}
+
 	return 4;
 }
 
@@ -731,53 +898,71 @@ size_t DecodeUtf8(const char *buffer, uint32_t &value)
 		value = c;
 		return 1;
 	}
-	if ((c & 0xE0) == 0xC0)
+	else if ((c & 0xE0) == 0xC0)
 	{
-		value = (c & 0x1F) << 6;
-		value |= (static_cast<unsigned char>(buffer[1]) & 0x3F);
+		value = ((c & 0x1F) << 6) |
+			(static_cast<unsigned char>(buffer[1]) & 0x3F);
+		if (value < 0x80) return 0;  // Overlong
 		return 2;
 	}
-	if ((c & 0xF0) == 0xE0)
+	else if ((c & 0xF0) == 0xE0)
 	{
-		value = (c & 0x0F) << 12;
-		value |= (static_cast<unsigned char>(buffer[1]) & 0x3F) << 6;
-		value |= (static_cast<unsigned char>(buffer[2]) & 0x3F);
+		value = ((c & 0x0F) << 12) |
+			((static_cast<unsigned char>(buffer[1]) & 0x3F) << 6) |
+			(static_cast<unsigned char>(buffer[2]) & 0x3F);
+		if (value < 0x800) return 0;  // Overlong
 		return 3;
 	}
-	if ((c & 0xF8) == 0xF0)
+	else if ((c & 0xF8) == 0xF0)
 	{
-		value = (c & 0x07) << 18;
-		value |= (static_cast<unsigned char>(buffer[1]) & 0x3F) << 12;
-		value |= (static_cast<unsigned char>(buffer[2]) & 0x3F) << 6;
-		value |= (static_cast<unsigned char>(buffer[3]) & 0x3F);
+		value = ((c & 0x07) << 18) |
+			((static_cast<unsigned char>(buffer[1]) & 0x3F) << 12) |
+			((static_cast<unsigned char>(buffer[2]) & 0x3F) << 6) |
+			(static_cast<unsigned char>(buffer[3]) & 0x3F);
+		if (value < 0x10000) return 0;  // Overlong
 		return 4;
 	}
+
 	return 0;
 }
 
 size_t DecodeUtf16(const char *buffer, uint32_t &value)
 {
-	unsigned char high = static_cast<unsigned char>(buffer[0]);
-	unsigned char low = static_cast<unsigned char>(buffer[1]);
-	if ((high & 0xD8) == 0xD8)
+	uint16_t word1 = (static_cast<uint8_t>(buffer[0]) << 8) | static_cast<uint8_t>(buffer[1]);
+
+	if (word1 >= 0xD800 && word1 <= 0xDBFF)
 	{
-		uint32_t high_surrogate = (high & 0x3F) << 8 | low;
-		unsigned char high2 = static_cast<unsigned char>(buffer[2]);
-		unsigned char low2 = static_cast<unsigned char>(buffer[3]);
-		uint32_t low_surrogate = (high2 & 0x3F) << 8 | low2;
-		value = ((high_surrogate - 0xD800) << 10) + (low_surrogate - 0xDC00) + 0x10000;
+		uint16_t word2 = (static_cast<uint8_t>(buffer[2]) << 8) | static_cast<uint8_t>(buffer[3]);
+		if (word2 < 0xDC00 || word2 > 0xDFFF)
+			return 0;
+
+		value = (((word1 - 0xD800) << 10) | (word2 - 0xDC00)) + 0x10000;
 		return 4;
 	}
-	value = (high << 8) | low;
+
+	if (word1 >= 0xDC00 && word1 <= 0xDFFF)
+		return 0;
+
+	value = word1;
 	return 2;
 }
 
-size_t DecodeUtf32(const char *buffer, uint32_t &value)
+size_t DecodeUtf32(const char *buffer, uint32_t &value, bool bigEndian)
 {
-	value = (static_cast<unsigned char>(buffer[0]) << 24) |
-		(static_cast<unsigned char>(buffer[1]) << 16) |
-		(static_cast<unsigned char>(buffer[2]) << 8) |
-		static_cast<unsigned char>(buffer[3]);
+	if (bigEndian)
+	{
+		value = (static_cast<uint8_t>(buffer[0]) << 24) |
+			(static_cast<uint8_t>(buffer[1]) << 16) |
+			(static_cast<uint8_t>(buffer[2]) << 8) |
+			static_cast<uint8_t>(buffer[3]);
+	}
+	else
+	{
+		value = (static_cast<uint8_t>(buffer[3]) << 24) |
+			(static_cast<uint8_t>(buffer[2]) << 16) |
+			(static_cast<uint8_t>(buffer[1]) << 8) |
+			static_cast<uint8_t>(buffer[0]);
+	}
 
 	return 4;
 }

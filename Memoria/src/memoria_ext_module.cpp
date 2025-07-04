@@ -254,7 +254,7 @@ std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromLibrary(const char *libn
 	HMODULE handle;
 
 	if (!libname || !*libname)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 	else
 		handle = GetModuleHandleA(libname);
 
@@ -270,7 +270,7 @@ std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromLibrary(const char *libn
 std::unique_ptr<CMemoryModule> CMemoryModule::CreateFromHandle(HMODULE handle, size_t size)
 {
 	if (handle == 0)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (handle == 0)
 		return {};

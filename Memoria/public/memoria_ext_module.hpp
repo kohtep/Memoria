@@ -13,9 +13,6 @@ MEMORIA_BEGIN
 
 class CMemoryBlock
 {
-public:
-	using SigCallbackFn = void (*)(CSigHandle &, void *lpParam);
-
 private:
 	CMemoryBlock(const CMemoryBlock &) = delete;
 	CMemoryBlock &operator=(const CMemoryBlock &) = delete;

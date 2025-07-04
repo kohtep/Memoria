@@ -11,6 +11,44 @@
 
 MEMORIA_BEGIN
 
+typedef struct _PEB_LDR_DATA
+{
+	UINT8 _PADDING_[12];
+	LIST_ENTRY InLoadOrderModuleList;
+	LIST_ENTRY InMemoryOrderModuleList;
+	LIST_ENTRY InInitializationOrderModuleList;
+} PEB_LDR_DATA, *PPEB_LDR_DATA;
+
+typedef struct _PEB
+{
+#ifdef _WIN64
+	UINT8 _PADDING_[24];
+#else
+	UINT8 _PADDING_[12];
+#endif
+	PEB_LDR_DATA *Ldr;
+} PEB, *PPEB;
+
+struct UNICODE_STRING
+{
+	USHORT Length;
+	USHORT MaximumLength;
+	PWSTR  Buffer;
+};
+
+typedef struct _LDR_DATA_TABLE_ENTRY
+{
+	LIST_ENTRY InLoadOrderLinks;
+	LIST_ENTRY InMemoryOrderLinks;
+	LIST_ENTRY InInitializationOrderLinks;
+	PVOID DllBase;
+	PVOID EntryPoint;
+	ULONG SizeOfImage;
+	UNICODE_STRING FullDllName;
+	UNICODE_STRING BaseDllName;
+} LDR_DATA_TABLE_ENTRY, *PLDR_DATA_TABLE_ENTRY;
+
+
 /**
  * @brief Performs an offset relative to `addr` forward or backward by the value of `offset`.
  *

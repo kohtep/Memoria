@@ -4,11 +4,9 @@
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
 
-#include "memoria_utils_string.hpp"
-
 MEMORIA_BEGIN
 
-std::optional<uint8_t> ReadU8(const void *addr, ptrdiff_t offset)
+Memoria::Optional<uint8_t> ReadU8(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -19,7 +17,7 @@ std::optional<uint8_t> ReadU8(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<uint8_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<uint16_t> ReadU16(const void *addr, ptrdiff_t offset)
+Memoria::Optional<uint16_t> ReadU16(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -29,7 +27,7 @@ std::optional<uint16_t> ReadU16(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<uint16_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<uint32_t> ReadU24(const void *addr, ptrdiff_t offset)
+Memoria::Optional<uint32_t> ReadU24(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -44,7 +42,7 @@ std::optional<uint32_t> ReadU24(const void *addr, ptrdiff_t offset)
 	return value;
 }
 
-std::optional<uint32_t> ReadU32(const void *addr, ptrdiff_t offset)
+Memoria::Optional<uint32_t> ReadU32(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -54,7 +52,7 @@ std::optional<uint32_t> ReadU32(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<uint32_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<uint64_t> ReadU64(const void *addr, ptrdiff_t offset)
+Memoria::Optional<uint64_t> ReadU64(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -65,7 +63,7 @@ std::optional<uint64_t> ReadU64(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<uint64_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<int8_t> ReadI8(const void *addr, ptrdiff_t offset)
+Memoria::Optional<int8_t> ReadI8(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -76,7 +74,7 @@ std::optional<int8_t> ReadI8(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<int8_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<int16_t> ReadI16(const void *addr, ptrdiff_t offset)
+Memoria::Optional<int16_t> ReadI16(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -87,7 +85,7 @@ std::optional<int16_t> ReadI16(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<int16_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<int32_t> ReadI24(const void *addr, ptrdiff_t offset)
+Memoria::Optional<int32_t> ReadI24(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -105,7 +103,7 @@ std::optional<int32_t> ReadI24(const void *addr, ptrdiff_t offset)
 	return static_cast<int32_t>(value);
 }
 
-std::optional<int32_t> ReadI32(const void *addr, ptrdiff_t offset)
+Memoria::Optional<int32_t> ReadI32(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -116,7 +114,7 @@ std::optional<int32_t> ReadI32(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<int32_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<int64_t> ReadI64(const void *addr, ptrdiff_t offset)
+Memoria::Optional<int64_t> ReadI64(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -127,7 +125,7 @@ std::optional<int64_t> ReadI64(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<int64_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<float> ReadFloat(const void *addr, ptrdiff_t offset)
+Memoria::Optional<float> ReadFloat(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -138,7 +136,7 @@ std::optional<float> ReadFloat(const void *addr, ptrdiff_t offset)
 	return *reinterpret_cast<float *>(reinterpret_cast<uintptr_t>(addr) + offset);
 }
 
-std::optional<double> ReadDouble(const void *addr, ptrdiff_t offset)
+Memoria::Optional<double> ReadDouble(const void *addr, ptrdiff_t offset)
 {
 	if (IsSafeModeActive() && !IsMemoryValid(addr, offset))
 	{
@@ -161,7 +159,7 @@ bool ReadAStr(const void *addr, char *out, size_t max_size, ptrdiff_t offset)
 	}
 
 	const char *src = reinterpret_cast<const char *>(reinterpret_cast<uintptr_t>(addr) + offset);
-	StrNCopySafeA(out, max_size, src, _TRUNCATE);
+	strncpy_s(out, max_size, src, _TRUNCATE);
 	return true;
 }
 
@@ -177,7 +175,7 @@ bool ReadWStr(const void *addr, wchar_t *out, size_t max_size, ptrdiff_t offset)
 	}
 
 	const wchar_t *src = reinterpret_cast<const wchar_t *>(reinterpret_cast<uintptr_t>(addr) + offset);
-	StrNCopySafeW(out, max_size, src, _TRUNCATE);
+	wcsncpy_s(out, max_size, src, _TRUNCATE);
 	return true;
 }
 
@@ -186,7 +184,7 @@ bool GetMemoryBlock(const void *source, size_t size, void *dest)
 	if (source == nullptr || dest == nullptr)
 		return false;
 
-	MemCopy(dest, source, size);
+	memcpy(dest, source, size);
 	return true;
 }
 
@@ -205,7 +203,7 @@ Memoria::Vector<uint8_t> GetMemoryData(const void *source, size_t size)
 	Memoria::Vector<uint8_t> data(size);
 
 	if (source != nullptr)
-		MemCopy(data.data(), source, size);
+		memcpy(data.data(), source, size);
 
 	return data;
 }

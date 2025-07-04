@@ -1,6 +1,5 @@
 #include "memoria_core_signature.hpp"
 
-#include "memoria_utils_string.hpp"
 #include "memoria_utils_assert.hpp"
 
 #include <string_view>
@@ -27,7 +26,7 @@ CSignature::CSignature(const char *str)
 	if (!str) return;
 
 	size_t i = 0;
-	size_t len = StrLenA(str);
+	size_t len = strlen(str);
 
 	while (i < len)
 	{
@@ -105,7 +104,7 @@ bool CSignature::Match(const void *addr) const
 
 	if (!_has_optionals)
 	{
-		return MemCompare(data, _payload.data(), _payload.size()) == 0;
+		return memcmp(data, _payload.data(), _payload.size()) == 0;
 	}
 	else
 	{

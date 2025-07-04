@@ -8,7 +8,6 @@
 #include "memoria_core_misc.hpp"
 
 #include "memoria_utils_assert.hpp"
-#include "memoria_utils_string.hpp"
 
 MEMORIA_BEGIN
 
@@ -30,9 +29,9 @@ bool CPatch::IsValid() const
 	bool equal;
 
 	if (_active)
-		equal = MemCompare(_dest_address, _data_patch.data(), _data_patch.size()) == 0;
+		equal = memcmp(_dest_address, _data_patch.data(), _data_patch.size()) == 0;
 	else
-		equal = MemCompare(_dest_address, _data_origin.data(), _data_origin.size()) == 0;
+		equal = memcmp(_dest_address, _data_origin.data(), _data_origin.size()) == 0;
 
 	return equal;
 }
@@ -94,8 +93,8 @@ CPatch::CPatch(void *dest_address, const void *source_address, size_t size, bool
 		_data_origin.zero_initialize();
 		_data_patch.zero_initialize();
 
-		MemCopy(_data_origin.data(), dest_address, size);
-		MemCopy(_data_patch.data(), source_address, size);
+		memcpy(_data_origin.data(), dest_address, size);
+		memcpy(_data_patch.data(), source_address, size);
 	}
 	else
 	{
@@ -214,7 +213,7 @@ CPatch *PatchAStr(void *addr, const char *value, bool instant_deploy, ptrdiff_t 
 	if (!value)
 		return nullptr;
 
-	size_t len = StrLenA(value);
+	size_t len = strlen(value);
 	return new CPatch(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset), value,
 		(len + 1) * sizeof(char), instant_deploy);
 }
@@ -224,7 +223,7 @@ CPatch *PatchWStr(void *addr, const wchar_t *value, bool instant_deploy, ptrdiff
 	if (!value)
 		return nullptr;
 
-	size_t len = StrLenW(value);
+	size_t len = wcslen(value);
 	return new CPatch(reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(addr) + offset), value,
 		(len + 1) * sizeof(wchar_t), instant_deploy);
 }

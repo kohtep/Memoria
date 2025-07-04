@@ -74,7 +74,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PublicIncludeDirectories>$(PublicIncludeDirectories)</PublicIncludeDirectories>
     <OutDir>$(SolutionDir)bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)obj\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)..\build\bin\$(Configuration)\$(Platform)\</OutDir>
@@ -86,7 +86,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)obj\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
+    <IntDir>$(ProjectDir)obj\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -203,7 +203,6 @@
     <ClCompile Include="..\src\memoria_utils_format.cpp" />
     <ClCompile Include="..\src\memoria_utils_msgbox.cpp" />
     <ClCompile Include="..\src\memoria_utils_secure.cpp" />
-    <ClCompile Include="..\src\memoria_utils_string.cpp" />
     <ClCompile Include="..\src\memoria_utils_unicode.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -241,7 +240,6 @@
     <ClInclude Include="..\public\memoria_utils_msgbox.hpp" />
     <ClInclude Include="..\public\memoria_utils_optional.hpp" />
     <ClInclude Include="..\public\memoria_utils_secure.hpp" />
-    <ClInclude Include="..\public\memoria_utils_string.hpp" />
     <ClInclude Include="..\public\memoria_utils_unicode.hpp" />
     <ClInclude Include="..\public\memoria_utils_vector.hpp" />
   </ItemGroup>

@@ -1,7 +1,6 @@
 #include "memoria_core_windows.hpp"
 
 #include "memoria_core_misc.hpp"
-#include "memoria_utils_string.hpp"
 
 #include <VersionHelpers.h>
 #include <string_view>
@@ -25,7 +24,7 @@ void EnumSections(HMODULE handle, SectionCallbackFn cb, LPVOID param)
 		return;
 
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle)
 		return;
@@ -47,7 +46,7 @@ void EnumSections(HMODULE handle, SectionCallbackFn cb, LPVOID param)
 PIMAGE_SECTION_HEADER GetSectionByIndex(HMODULE handle, DWORD image_directory)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle)
 		return nullptr;
@@ -62,9 +61,14 @@ PIMAGE_SECTION_HEADER GetSectionByIndex(HMODULE handle, DWORD image_directory)
 
 	PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeaders);
 
+	DWORD va = dataDir.VirtualAddress;
+
 	for (unsigned int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++)
 	{
-		if (dataDir.VirtualAddress == section->VirtualAddress)
+		DWORD start = section->VirtualAddress;
+		DWORD end = start + section->Misc.VirtualSize;
+
+		if (va >= start && va < end)
 			return section;
 
 		section++;
@@ -76,7 +80,7 @@ PIMAGE_SECTION_HEADER GetSectionByIndex(HMODULE handle, DWORD image_directory)
 PIMAGE_SECTION_HEADER GetSectionByFlags(HMODULE handle, DWORD flags, bool match_exactly)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle)
 		return nullptr;
@@ -112,7 +116,7 @@ PIMAGE_SECTION_HEADER GetSectionByFlags(HMODULE handle, DWORD flags, bool match_
 PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const char *name)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle || !name || !*name)
 		return nullptr;
@@ -123,11 +127,11 @@ PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const char *name)
 
 	PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(ntHeaders);
 
-	size_t name_len = StrLenA(name);
+	size_t name_len = strlen(name);
 
 	for (unsigned int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++)
 	{
-		if (MemCompare(section->Name, name, name_len) == 0)
+		if (memcmp(section->Name, name, name_len) == 0)
 		{
 			return section;
 		}
@@ -141,7 +145,7 @@ PIMAGE_SECTION_HEADER GetSectionByName(HMODULE handle, const char *name)
 PIMAGE_SECTION_HEADER GetEntrySection(HMODULE handle)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle)
 		return nullptr;
@@ -168,7 +172,7 @@ PIMAGE_SECTION_HEADER GetEntrySection(HMODULE handle)
 std::pair<PVOID, PVOID> GetSectionBounds(HMODULE handle, PIMAGE_SECTION_HEADER section)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle)
 		return {};
@@ -192,10 +196,31 @@ std::pair<PVOID, PVOID> GetSectionBounds(PIMAGE_SECTION_HEADER section)
 	return GetSectionBounds(handle, section);
 }
 
+HMODULE GetExeBase()
+{
+#ifdef _M_X64
+	PPEB peb = (PPEB)__readgsqword(0x60);
+#elif defined(_M_IX86)
+	PPEB peb = (PPEB)__readfsdword(0x30);
+#else
+#error Unsupported architecture
+#endif
+
+	if (!peb || !peb->Ldr)
+		return nullptr;
+
+	PLIST_ENTRY head = peb->Ldr->InLoadOrderModuleList.Flink;
+	if (!head)
+		return nullptr;
+
+	PLDR_DATA_TABLE_ENTRY entry = CONTAINING_RECORD(head, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+	return reinterpret_cast<HMODULE>(entry->DllBase);
+}
+
 void *GetImageBase(HMODULE handle)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle)
 		return nullptr;
@@ -218,7 +243,7 @@ void *GetImageBase(const char *name)
 	HMODULE handle;
 
 	if (!name || !*name)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 	else
 		handle = GetModuleHandleA(name);
 
@@ -231,7 +256,7 @@ void *GetImageBase(const char *name)
 std::pair<WORD, WORD> GetModuleVersion(HMODULE handle)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle)
 		return { 0, 0 };
@@ -256,7 +281,7 @@ std::pair<WORD, WORD> GetModuleVersion(const char *name)
 	HMODULE handle;
 
 	if (!name || !*name)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 	else
 		handle = GetModuleHandleA(name);
 
@@ -269,7 +294,7 @@ std::pair<WORD, WORD> GetModuleVersion(const char *name)
 DWORD GetModuleSize(HMODULE handle)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	PIMAGE_DOS_HEADER dos = reinterpret_cast<PIMAGE_DOS_HEADER>(handle);
 	PIMAGE_NT_HEADERS nt = reinterpret_cast<PIMAGE_NT_HEADERS>(reinterpret_cast<uintptr_t>(dos) + dos->e_lfanew);
@@ -277,39 +302,41 @@ DWORD GetModuleSize(HMODULE handle)
 	return nt->OptionalHeader.SizeOfImage;
 }
 
-Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle)
+size_t ParseExportDirectory(HMODULE handle, ExportFunc_t *out, size_t max_size)
 {
-	Memoria::Vector<ExportFunc_t> exports;
-
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
-	if (!handle)
-		return exports;
+	if (!handle || !out || max_size == 0)
+		return 0;
 
+	size_t count = 0;
 	BYTE *base = reinterpret_cast<BYTE *>(handle);
 	IMAGE_DOS_HEADER *dosHeader = reinterpret_cast<IMAGE_DOS_HEADER *>(base);
+
 	if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
-		return exports;
+		return 0;
 
 	IMAGE_NT_HEADERS *ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS *>(base + dosHeader->e_lfanew);
+
 	if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
-		return exports;
+		return 0;
 
 	DWORD exportDirRVA = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+
 	if (!exportDirRVA)
-		return exports;
+		return 0;
 
 	IMAGE_EXPORT_DIRECTORY *exportDir = reinterpret_cast<IMAGE_EXPORT_DIRECTORY *>(base + exportDirRVA);
-
 	DWORD *functions = reinterpret_cast<DWORD *>(base + exportDir->AddressOfFunctions);
 	DWORD *names = reinterpret_cast<DWORD *>(base + exportDir->AddressOfNames);
 	WORD *ordinals = reinterpret_cast<WORD *>(base + exportDir->AddressOfNameOrdinals);
 
-	for (DWORD i = 0; i < exportDir->NumberOfFunctions; ++i)
+	for (DWORD i = 0; i < exportDir->NumberOfFunctions && count < max_size; ++i)
 	{
-		ExportFunc_t func = {};
+		ExportFunc_t &func = out[count];
 		func.Address = reinterpret_cast<void *>(base + functions[i]);
+		func.Name = nullptr;
 
 		for (DWORD j = 0; j < exportDir->NumberOfNames; ++j)
 		{
@@ -321,10 +348,75 @@ Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle)
 		}
 
 		func.Ordinal = static_cast<WORD>(exportDir->Base + i);
-		exports.push_back(func);
+		++count;
 	}
 
-	return exports;
+	return count;
+}
+
+size_t ParseImportDirectory(HMODULE handle, ImportFunc_t *out, size_t max_size)
+{
+	if (!handle)
+		handle = GetExeBase();
+
+	if (!handle || !out || max_size == 0)
+		return 0;
+
+	size_t count = 0;
+	BYTE *base = reinterpret_cast<BYTE *>(handle);
+	IMAGE_DOS_HEADER *dosHeader = reinterpret_cast<IMAGE_DOS_HEADER *>(base);
+
+	if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+		return 0;
+
+	IMAGE_NT_HEADERS *ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS *>(base + dosHeader->e_lfanew);
+
+	if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
+		return 0;
+
+	DWORD importDirRVA = ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+
+	if (!importDirRVA)
+		return 0;
+
+	IMAGE_IMPORT_DESCRIPTOR *importDesc = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(base + importDirRVA);
+
+	while (importDesc->Name && count < max_size)
+	{
+		const char *dllName = reinterpret_cast<const char *>(base + importDesc->Name);
+		IMAGE_THUNK_DATA *origThunk = reinterpret_cast<IMAGE_THUNK_DATA *>(base + importDesc->OriginalFirstThunk);
+		IMAGE_THUNK_DATA *iatThunk = reinterpret_cast<IMAGE_THUNK_DATA *>(base + importDesc->FirstThunk);
+
+		if (!origThunk)
+			origThunk = iatThunk;
+
+		while (origThunk->u1.AddressOfData && count < max_size)
+		{
+			ImportFunc_t &func = out[count];
+			func.DLLName = dllName;
+			func.IATAddress = reinterpret_cast<void *>(&iatThunk->u1.Function);
+
+			if (origThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
+			{
+				func.Ordinal = static_cast<WORD>(origThunk->u1.Ordinal & 0xFFFF);
+				func.FuncName = nullptr;
+			}
+			else
+			{
+				IMAGE_IMPORT_BY_NAME *importByName = reinterpret_cast<IMAGE_IMPORT_BY_NAME *>(base + origThunk->u1.AddressOfData);
+				func.FuncName = reinterpret_cast<const char *>(importByName->Name);
+				func.Ordinal = 0;
+			}
+
+			++origThunk;
+			++iatThunk;
+			++count;
+		}
+
+		++importDesc;
+	}
+
+	return count;
 }
 
 DWORD GetMainThreadId()

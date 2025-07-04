@@ -3,6 +3,7 @@
 #include "memoria_common.hpp"
 #include "memoria_utils_vector.hpp"
 #include "memoria_utils_optional.hpp"
+#include "memoria_utils_unicode.hpp"
 
 MEMORIA_BEGIN
 

@@ -10,6 +10,9 @@
 
 MEMORIA_BEGIN
 
+#pragma push_macro("max")
+#undef max
+
 class CRandomSimple
 {
 	static inline constexpr uint64_t _multiplier = 6364136223846793005ull;
@@ -19,10 +22,10 @@ private:
 	uint64_t _state = 0;
 
 	template <typename T>
-	[[msvc::forceinline]] T Get() noexcept;
+	__forceinline T Get() noexcept;
 
 	template <typename T>
-	[[msvc::forceinline]] T Get(T min, T max) noexcept;
+	__forceinline T Get(T min, T max) noexcept;
 
 public:
 	static constexpr uint64_t MakeSeedFrom(uint64_t basis, size_t lcg_iterations = 3) noexcept;
@@ -66,6 +69,14 @@ public:
 	int32_t GetI24(int32_t min, int32_t max) noexcept { return static_cast<int32_t>(Get<uint32_t>(min, max) & 0xFFFFFF); }
 	int32_t GetI32(int32_t min, int32_t max) noexcept { return Get<int32_t>(min, max); }
 	int64_t GetI64(int64_t min, int64_t max) noexcept { return Get<int64_t>(min, max); }
+
+	uintptr_t Get() noexcept
+	{
+		if constexpr (sizeof(uintptr_t) == 8)
+			return static_cast<uintptr_t>(GetU64());
+		else
+			return static_cast<uintptr_t>(GetU32());
+	}
 
 	float  GetFloat() noexcept { return GetFloat(0.0f, 1.0f); }
 	double GetDouble() noexcept { return GetDouble(0.0, 1.0); }
@@ -119,21 +130,28 @@ T CRandomSimple::Get(T min, T max) noexcept
 	if (min > max)
 	{
 		AssertMsg(false, "CRandomSimple::Get: min is greater than max");
-		T temp = min;
-		min = max;
-		max = temp;
+		std::swap(min, max);
 	}
 
 	Skip();
 
-	uint64_t range = static_cast<uint64_t>(max) - static_cast<uint64_t>(min) + 1;
-	AssertMsg(range != 0, "CRandomSimple::Get: range is zero");
+	using U = std::make_unsigned_t<T>;
+	U umin = static_cast<U>(min);
+	U umax = static_cast<U>(max);
 
-	if (range == 0)
-		return 0;
+	U value;
+	if (umax == std::numeric_limits<U>::max() && umin == 0)
+	{
+		value = static_cast<U>(_state);
+	}
+	else
+	{
+		uint64_t range = static_cast<uint64_t>(umax) - static_cast<uint64_t>(umin) + 1;
+		AssertMsg(range != 0, "CRandomSimple::Get: range is zero");
+		value = static_cast<U>(umin + (_state % range));
+	}
 
-	uint64_t value = _state % range;
-	return static_cast<T>(static_cast<uint64_t>(min) + value);
+	return static_cast<T>(value);
 }
 
 float CRandomSimple::GetFloat(float min, float max) noexcept
@@ -224,7 +242,7 @@ private:
 		}
 	}
 
-	[[msvc::forceinline]] void Unpack() const noexcept
+	__forceinline void Unpack() const noexcept
 	{
 		if (_seed == 0)
 			return;
@@ -304,6 +322,8 @@ public:
 		return GetFunction() != nullptr;
 	}
 };
+
+#pragma pop_macro("max")
 
 MEMORIA_END
 

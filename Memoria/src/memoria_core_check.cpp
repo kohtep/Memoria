@@ -4,8 +4,6 @@
 #include "memoria_core_options.hpp"
 #include "memoria_core_errors.hpp"
 
-#include "memoria_utils_string.hpp"
-
 #include <string_view>
 
 MEMORIA_BEGIN
@@ -27,7 +25,7 @@ bool CheckMemory(const void *addr, const void *value, size_t size, ptrdiff_t off
 		}
 	}
 
-	return MemCompare(PtrOffset(addr, offset), value, size) == 0;
+	return memcmp(PtrOffset(addr, offset), value, size) == 0;
 }
 
 bool CheckU8(const void *addr, uint8_t value, ptrdiff_t offset)
@@ -119,7 +117,7 @@ bool CheckAStr(const void *addr, const char *value, ptrdiff_t offset)
 	if (!value)
 		return false;
 
-	size_t len = StrLenA(value);
+	size_t len = strlen(value);
 	return CheckMemory(addr, value, len, offset);
 }
 
@@ -128,7 +126,7 @@ bool CheckWStr(const void *addr, const wchar_t *value, ptrdiff_t offset)
 	if (!value)
 		return false;
 
-	size_t len = StrLenW(value);
+	size_t len = wcslen(value);
 	return CheckMemory(addr, value, len * sizeof(wchar_t), offset * sizeof(wchar_t));
 }
 

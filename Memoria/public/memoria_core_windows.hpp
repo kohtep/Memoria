@@ -76,6 +76,8 @@ extern std::pair<PVOID, PVOID> GetSectionBounds(HMODULE handle, PIMAGE_SECTION_H
  */
 extern std::pair<PVOID, PVOID> GetSectionBounds(PIMAGE_SECTION_HEADER section);
 
+extern HMODULE GetExeBase();
+
 /**
  * @brief
  *
@@ -128,7 +130,21 @@ struct ExportFunc_t
     WORD Ordinal;
 };
 
-extern Memoria::Vector<ExportFunc_t> ParseExportDirectory(HMODULE handle);
+extern size_t ParseExportDirectory(HMODULE handle, ExportFunc_t *out, size_t max_size);
+
+struct ImportFunc_t
+{
+	const char *DLLName;
+
+	// nullptr if ordinal used
+	const char *FuncName;
+
+	WORD Ordinal;
+
+	void *IATAddress;
+};
+
+extern size_t ParseImportDirectory(HMODULE handle, ImportFunc_t *out, size_t max_size);
 
 extern DWORD GetMainThreadId();
 

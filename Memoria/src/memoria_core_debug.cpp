@@ -1,7 +1,6 @@
 #include "memoria_core_debug.hpp"
 
 #include "memoria_core_misc.hpp"
-#include "memoria_utils_string.hpp"
 #include "memoria_utils_format.hpp"
 #include "memoria_utils_optional.hpp"
 
@@ -183,7 +182,7 @@ bool GetSymbolName(const void *address, char *out, size_t max_size)
 
 	if (symbol->Name)
 	{
-		StrNCopySafeA(out, max_size, symbol->Name, _TRUNCATE);
+		strncpy_s(out, max_size, symbol->Name, _TRUNCATE);
 		return true;
 	}
 
@@ -226,7 +225,7 @@ bool GetBeautyFunctionAddress(const void *address, char *out, size_t max_size,
 		if (hModule)
 		{
 			GetModuleName(hModule, module_prefix, sizeof(module_prefix));
-			StrCatSafeA(module_prefix, sizeof(module_prefix), "!");
+			strcat_s(module_prefix, sizeof(module_prefix), "!");
 		}
 	}
 

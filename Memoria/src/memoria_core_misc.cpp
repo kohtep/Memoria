@@ -1,7 +1,8 @@
 #include "memoria_core_misc.hpp"
 
-#include "memoria_utils_string.hpp"
 #include "memoria_utils_format.hpp"
+
+#include "memoria_core_windows.hpp"
 
 #include <Windows.h>
 #include <inttypes.h>
@@ -256,10 +257,10 @@ bool GetModuleName(HMODULE hModule, char *out, size_t max_size)
 		return false;
 	}
 
-	const char *filename = FindLastCharA(buffer, '\\');
+	const char *filename = strrchr(buffer, '\\');
 	filename = filename ? filename + 1 : buffer;
 
-	StrNCopyA(out, filename, max_size);
+	strncpy(out, filename, max_size);
 	return true;
 }
 
@@ -285,7 +286,7 @@ bool BeautifyPointer(const void *addr, char *out, size_t max_size)
 
 	if (!addr)
 	{
-		StrNCopyA(out, "null", max_size);
+		strncpy(out, "null", max_size);
 		return true;
 	}
 
@@ -303,7 +304,7 @@ bool BeautifyPointer(const void *addr, char *out, size_t max_size)
 		return true;
 	}
 
-	char *last_dot = FindLastCharA(modname, '.');
+	char *last_dot = strrchr(modname, '.');
 	if (last_dot)
 		*last_dot = '\0';
 
@@ -376,43 +377,6 @@ DWORD BeginThread(void (*fnFunction)())
 	return nThreadId;
 }
 
-typedef struct _PEB_LDR_DATA
-{
-	UINT8 _PADDING_[12];
-	LIST_ENTRY InLoadOrderModuleList;
-	LIST_ENTRY InMemoryOrderModuleList;
-	LIST_ENTRY InInitializationOrderModuleList;
-} PEB_LDR_DATA, *PPEB_LDR_DATA;
-
-typedef struct _PEB
-{
-#ifdef _WIN64
-	UINT8 _PADDING_[24];
-#else
-	UINT8 _PADDING_[12];
-#endif
-	PEB_LDR_DATA *Ldr;
-} PEB, *PPEB;
-
-struct UNICODE_STRING
-{
-	USHORT Length;
-	USHORT MaximumLength;
-	PWSTR  Buffer;
-};
-
-typedef struct _LDR_DATA_TABLE_ENTRY
-{
-	LIST_ENTRY InLoadOrderLinks;
-	LIST_ENTRY InMemoryOrderLinks;
-	LIST_ENTRY InInitializationOrderLinks;
-	PVOID DllBase;
-	PVOID EntryPoint;
-	ULONG SizeOfImage;
-	UNICODE_STRING FullDllName;
-	UNICODE_STRING BaseDllName;
-} LDR_DATA_TABLE_ENTRY, *PLDR_DATA_TABLE_ENTRY;
-
 using EnumModulesFn_t = bool(*)(PLDR_DATA_TABLE_ENTRY entry, LPVOID param);
 
 static void EnumModules(EnumModulesFn_t fn, LPVOID param)
@@ -456,10 +420,10 @@ static void *ResolveForwardExport(const char *forward_str, bool force_load_libra
 	char dll_name_raw[256];
 	char func_name[256];
 
-	StrNCopyA(dll_name_raw, forward_str, sizeof(dll_name_raw));
+	strncpy_s(dll_name_raw, forward_str, sizeof(dll_name_raw));
 	dll_name_raw[sizeof(dll_name_raw) - 1] = '\0';
 
-	char *dot = FindCharA(dll_name_raw, '.');
+	char *dot = strchr(dll_name_raw, '.');
 	if (!dot)
 		return nullptr;
 
@@ -467,18 +431,18 @@ static void *ResolveForwardExport(const char *forward_str, bool force_load_libra
 	const char *dll_name_part = dll_name_raw;
 	const char *func_name_part = dot + 1;
 
-	StrNCopyA(func_name, func_name_part, sizeof(func_name));
+	strncpy_s(func_name, func_name_part, sizeof(func_name));
 	func_name[sizeof(func_name) - 1] = '\0';
 
 	char dll_name_full[MAX_PATH];
-	StrNCopyA(dll_name_full, dll_name_part, sizeof(dll_name_full) - 5);
+	strncpy_s(dll_name_full, dll_name_part, sizeof(dll_name_full) - 5);
 	dll_name_full[sizeof(dll_name_full) - 5] = '\0';
 
-	size_t len = StrLenA(dll_name_full);
+	size_t len = strlen(dll_name_full);
 	volatile char suffix[] = { '.', 'd', 'l', 'l' };
 
-	if (len < 4 || StrLCompA(dll_name_full + len - 4, const_cast<const char *>(suffix), 4) != 0)
-		StrNCatA(dll_name_full, const_cast<const char *>(suffix), 4);
+	if (len < 4 || strncmp(dll_name_full + len - 4, const_cast<const char *>(suffix), 4) != 0)
+		strncat_s(dll_name_full, const_cast<const char *>(suffix), 4);
 
 	HMODULE module = GetModuleHandleDirect(FNV1a64(dll_name_full));
 	if (!module)
@@ -509,7 +473,7 @@ static void *ResolveForwardExport(const char *forward_str, bool force_load_libra
 	{
 		const char *name = (const char *)((PBYTE)module + names[i]);
 
-		if (StrCompA(name, func_name) == 0)
+		if (strcmp(name, func_name) == 0)
 		{
 			if (ordinals[i] >= exportDir->NumberOfFunctions)
 				return nullptr;
@@ -654,7 +618,7 @@ using CreateInterfaceFn_t = void *(*)(const char *name, int *returnCode);
 void *GetInterfaceAddress(HMODULE handle, const char *interface_name)
 {
 	if (!handle)
-		handle = GetModuleHandleA(nullptr);
+		handle = GetExeBase();
 
 	if (!handle || !interface_name || !*interface_name)
 		return nullptr;

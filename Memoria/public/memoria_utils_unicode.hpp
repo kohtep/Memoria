@@ -13,33 +13,31 @@ extern bool IsValidUnicode(uint32_t value);
 
 extern uint32_t Utf8ToCodepoint(const uint8_t *bytes, size_t len);
 extern size_t Utf8SeqLength(unsigned char first);
-extern bool Utf8Validate(const char *data, size_t size);
 
 extern bool IsValidUtf8Char(const char *utf8, size_t size = -1, size_t *length = nullptr);
 extern bool IsValidUtf16Char(const char *utf16, size_t size = -1, size_t *length = nullptr);
-extern bool IsValidUtf32Char(const char *utf32, size_t size = -1, size_t *length = nullptr);
+extern bool IsValidUtf32Char(const char *utf32, size_t size = -1, size_t *length = nullptr, bool bigEndian = false);
 
 extern bool IsValidUtf8String(const char *utf8, size_t size = -1);
 extern bool IsValidUtf16String(const char *utf16, size_t size = -1);
-extern bool IsValidUtf32String(const char *utf32, size_t size = -1);
+extern bool IsValidUtf32String(const char *utf32, size_t size = -1, bool bigEndian = false);
 
 extern size_t EncodeUtf8(uint32_t value, char *buffer);
 extern size_t EncodeUtf16(uint32_t value, char *buffer);
-extern size_t EncodeUtf32(uint32_t value, char *buffer);
+extern size_t EncodeUtf32(uint32_t value, char *buffer, bool bigEndian = false);
 
 extern size_t DecodeUtf8(const char *buffer, uint32_t &value);
 extern size_t DecodeUtf16(const char *buffer, uint32_t &value);
-extern size_t DecodeUtf32(const char *buffer, uint32_t &value);
+extern size_t DecodeUtf32(const char *buffer, uint32_t &value, bool bigEndian = false);
 
 class CUTF8Char
 {
 private:
 	char _bytes[kMaxUtf8CharSize];
-	uint8_t _size;
 
 public:
 	CUTF8Char();
-	CUTF8Char(const char *data, size_t length);
+	CUTF8Char(const char *data);
 
 	const char *data() const;
 	size_t size() const;
@@ -53,8 +51,27 @@ public:
 	size_t write(char *buffer) const;
 };
 
+//
+// Base class for UTF-8 string. Implements all core logic related to data management,
+// such as resizing, adding or removing data, etc.
+//
+// Under no circumstances should this class define its own destructor,
+// as it must remain a POD-compatible type to avoid generating `atexit` overhead
+// calls for some derived classes. All destructors, if needed, must be implemented
+// in the derived classes.
+//
+// This class, as well as its descendants, should avoid the use of virtual tables
+// to prevent additional overhead. In general, their use might be justified,
+// but it's preferable to avoid them if possible.
+//
 class CUTF8StringBase
 {
+	enum class eStringCase
+	{
+		Upper = 0,
+		Lower = 1,
+	};
+
 protected:
 	char *_buffer = nullptr;
 	size_t _length = 0;
@@ -63,10 +80,11 @@ protected:
 	bool _expandable = false;
 
 private:
+	bool transform_case(eStringCase mode);
 	bool ensure_capacity(size_t additional_size);
 
 public:
-	CUTF8StringBase();
+	constexpr CUTF8StringBase() noexcept = default;
 
 	const char *c_str() const;
 	const char *data() const;
@@ -83,6 +101,9 @@ public:
 
 	bool from_string(const char *str);
 	bool append(const char *str);
+
+	bool to_upper() { return transform_case(eStringCase::Upper); }
+	bool to_lower() { return transform_case(eStringCase::Lower); }
 };
 
 class CUTF8String : public CUTF8StringBase
@@ -91,8 +112,15 @@ public:
 	CUTF8String();
 	CUTF8String(const char *text);
 	CUTF8String(const char8_t *text);
+	~CUTF8String();
 
-	CUTF8String &operator=(const char *str);
+	CUTF8String(const CUTF8String &other);
+	CUTF8String &operator=(const CUTF8String &other);
+
+	CUTF8String(CUTF8String &&other) noexcept;
+	CUTF8String &operator=(CUTF8String &&other) noexcept;
+
+	CUTF8String &operator=(const char *text);
 	CUTF8String &operator=(const char8_t *text);
 };
 
@@ -102,64 +130,62 @@ class CFixedUTF8String : public CUTF8StringBase
 private:
 	char8_t _container[(MaxSize + 1) * kMaxUtf8CharSize]{};
 
+	void lazy_init()
+	{
+		this->_buffer = reinterpret_cast<char *>(this->_container);
+		this->_buffer[0] = '\0';
+
+		this->_capacity = MaxSize;
+		this->_length = 0;
+	}
+
 public:
-	CFixedUTF8String();
-	CFixedUTF8String(const char *text);
-	CFixedUTF8String(const char8_t *text);
+	constexpr CFixedUTF8String() noexcept = default;
 
-	CFixedUTF8String &operator=(const char *str);
-	CFixedUTF8String &operator=(const char8_t *text);
+	CFixedUTF8String(const char *text)
+	{
+		_buffer = reinterpret_cast<char *>(_container);
+		_buffer[0] = '\0';
+
+		_capacity = MaxSize;
+		_length = 0;
+
+		from_string(text);
+	}
+
+	CFixedUTF8String(const char8_t *text)
+	{
+		_buffer = reinterpret_cast<char *>(_container);
+		_buffer[0] = '\0';
+
+		_capacity = MaxSize;
+		_length = 0;
+
+		from_string(reinterpret_cast<const char *>(text));
+	}
+
+	CFixedUTF8String<MaxSize> &operator=(const char *str)
+	{
+		if (_capacity == 0)
+			lazy_init();
+
+		if (!from_string(str))
+			clear();
+
+		return *this;
+	}
+
+	CFixedUTF8String<MaxSize> &operator=(const char8_t *str)
+	{
+		if (_capacity == 0)
+			lazy_init();
+
+		if (!from_string(reinterpret_cast<const char *>(str)))
+			clear();
+
+		return *this;
+	}
 };
-
-template <size_t MaxSize>
-CFixedUTF8String<MaxSize>::CFixedUTF8String()
-{
-	_buffer = reinterpret_cast<char *>(_container);
-	_buffer[0] = '\0';
-
-	_capacity = MaxSize;
-	_length = 0;
-}
-
-template <size_t MaxSize>
-CFixedUTF8String<MaxSize>::CFixedUTF8String(const char *text)
-{
-	_buffer = reinterpret_cast<char *>(_container);
-	_buffer[0] = '\0';
-
-	_capacity = MaxSize;
-	_length = 0;
-	from_string(text);
-}
-
-template <size_t MaxSize>
-CFixedUTF8String<MaxSize>::CFixedUTF8String(const char8_t *text)
-{
-	_buffer = reinterpret_cast<char *>(_container);
-	_buffer[0] = '\0';
-
-	_capacity = MaxSize;
-	_length = 0;
-	from_string(reinterpret_cast<const char *>(text));
-}
-
-template <size_t MaxSize>
-CFixedUTF8String<MaxSize> &CFixedUTF8String<MaxSize>::operator=(const char *str)
-{
-	if (!from_string(str))
-		clear();
-
-	return *this;
-}
-
-template <size_t MaxSize>
-CFixedUTF8String<MaxSize> &CFixedUTF8String<MaxSize>::operator=(const char8_t *str)
-{
-	if (!from_string(reinterpret_cast<const char *>(str)))
-		clear();
-
-	return *this;
-}
 
 using CFixedUTF8String32   = CFixedUTF8String<32>;
 using CFixedUTF8String64   = CFixedUTF8String<64>;

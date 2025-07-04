@@ -4,7 +4,6 @@
 #include "memoria_core_errors.hpp"
 #include "memoria_core_options.hpp"
 #include "memoria_utils_assert.hpp"
-#include "memoria_utils_string.hpp"
 
 #include "hde64.h"
 
@@ -14,7 +13,7 @@ using FindMemoryCmp_t = bool(*)(const void *addr1, const void *addr2, size_t siz
 
 static bool FindMemoryCmp(const void *addr1, const void *addr2, size_t size, void *param)
 {
-	return MemCompare(addr1, addr2, size) == 0;
+	return memcmp(addr1, addr2, size) == 0;
 }
 
 void *FindMemory(const void *addr_start, const void *addr_min, const void *addr_max, const void *data, size_t size, bool backward, 
@@ -304,12 +303,12 @@ void *FindReference(const void *addr_start, const void *addr_min, const void *ad
 
 void *FindAStr(const void *addr_start, const void *addr_min, const void *addr_max, const char *data, bool backward, ptrdiff_t offset)
 {
-	return FindBlock(addr_start, addr_min, addr_max, data, (StrLenA(data) * sizeof(char)) + sizeof(char), backward, offset);
+	return FindBlock(addr_start, addr_min, addr_max, data, (strlen(data) * sizeof(char)) + sizeof(char), backward, offset);
 }
 
 void *FindWStr(const void *addr_start, const void *addr_min, const void *addr_max, const wchar_t *data, bool backward, ptrdiff_t offset)
 {
-	return FindBlock(addr_start, addr_min, addr_max, data, (StrLenW(data) * sizeof(wchar_t)) + sizeof(wchar_t), backward, offset);
+	return FindBlock(addr_start, addr_min, addr_max, data, (wcslen(data) * sizeof(wchar_t)) + sizeof(wchar_t), backward, offset);
 }
 
 // for easy reading
@@ -360,7 +359,7 @@ void *FindRelative(const void *addr_start, const void *addr_min, const void *add
 		if (!IsInBounds(result, addr_min, addr_max))
 			return nullptr;
 
-		MemFill(&hs, 0, sizeof(hde64s));
+		memset(&hs, 0, sizeof(hde64s));
 		hde64_disasm(result, &hs);
 
 		if (hs.flags & F64_RELATIVE)

@@ -20,7 +20,6 @@
 #include "memoria_utils_assert.hpp"
 #include "memoria_utils_list.hpp"
 #include "memoria_utils_optional.hpp"
-#include "memoria_utils_string.hpp"
 #include "memoria_utils_vector.hpp"
 #include "memoria_utils_format.hpp"
 

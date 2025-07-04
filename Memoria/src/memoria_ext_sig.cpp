@@ -8,8 +8,6 @@
 #include "memoria_ext_module.hpp"
 #include "memoria_utils_assert.hpp"
 
-#include <string_view>
-
 MEMORIA_BEGIN
 
 CSigHandle::CSigHandle(const void *mem_begin, const void *mem_end, void *output)
@@ -36,18 +34,12 @@ CSigHandle::CSigHandle(const void *mem_begin, const void *mem_end, void *output)
 #endif
 }
 
-CSigHandle::CSigHandle(CMemoryBlock *block, void *output)
-	: CSigHandle(block->GetBase(), block->GetLastByte(), output)
-{
-
-}
-
 CSigHandle::~CSigHandle()
 {
 
 }
 
-void CSigHandle::SetOutputInternally(const void *value, bool deref)
+void CSigHandle::SetPointerResult(const void *value, bool deref)
 {
 	if (!_output)
 		return;
@@ -69,7 +61,7 @@ void CSigHandle::SetOutputInternally(const void *value, bool deref)
 #endif
 }
 
-std::optional<uint8_t> CSigHandle::ReadU8(ptrdiff_t offset)
+Memoria::Optional<uint8_t> CSigHandle::PeekU8(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -77,7 +69,7 @@ std::optional<uint8_t> CSigHandle::ReadU8(ptrdiff_t offset)
 	return Memoria::ReadU8(*_output, offset);
 }
 
-std::optional<uint16_t> CSigHandle::ReadU16(ptrdiff_t offset)
+Memoria::Optional<uint16_t> CSigHandle::PeekU16(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -86,7 +78,7 @@ std::optional<uint16_t> CSigHandle::ReadU16(ptrdiff_t offset)
 }
 
 
-std::optional<uint32_t> CSigHandle::ReadU24(ptrdiff_t offset)
+Memoria::Optional<uint32_t> CSigHandle::PeekU24(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -94,7 +86,7 @@ std::optional<uint32_t> CSigHandle::ReadU24(ptrdiff_t offset)
 	return Memoria::ReadU24(*_output, offset);
 }
 
-std::optional<uint32_t> CSigHandle::ReadU32(ptrdiff_t offset)
+Memoria::Optional<uint32_t> CSigHandle::PeekU32(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -102,7 +94,7 @@ std::optional<uint32_t> CSigHandle::ReadU32(ptrdiff_t offset)
 	return Memoria::ReadU32(*_output, offset);
 }
 
-std::optional<uint64_t> CSigHandle::ReadU64(ptrdiff_t offset)
+Memoria::Optional<uint64_t> CSigHandle::PeekU64(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -110,7 +102,7 @@ std::optional<uint64_t> CSigHandle::ReadU64(ptrdiff_t offset)
 	return Memoria::ReadU64(*_output, offset);
 }
 
-std::optional<int8_t> CSigHandle::ReadI8(ptrdiff_t offset)
+Memoria::Optional<int8_t> CSigHandle::PeekI8(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -118,7 +110,7 @@ std::optional<int8_t> CSigHandle::ReadI8(ptrdiff_t offset)
 	return Memoria::ReadI8(*_output, offset);
 }
 
-std::optional<int16_t> CSigHandle::ReadI16(ptrdiff_t offset)
+Memoria::Optional<int16_t> CSigHandle::PeekI16(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -126,7 +118,7 @@ std::optional<int16_t> CSigHandle::ReadI16(ptrdiff_t offset)
 	return Memoria::ReadI16(*_output, offset);
 }
 
-std::optional<int32_t> CSigHandle::ReadI24(ptrdiff_t offset)
+Memoria::Optional<int32_t> CSigHandle::PeekI24(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -134,7 +126,7 @@ std::optional<int32_t> CSigHandle::ReadI24(ptrdiff_t offset)
 	return Memoria::ReadI24(*_output, offset);
 }
 
-std::optional<int32_t> CSigHandle::ReadI32(ptrdiff_t offset)
+Memoria::Optional<int32_t> CSigHandle::PeekI32(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -142,7 +134,7 @@ std::optional<int32_t> CSigHandle::ReadI32(ptrdiff_t offset)
 	return Memoria::ReadI32(*_output, offset);
 }
 
-std::optional<int64_t> CSigHandle::ReadI64(ptrdiff_t offset)
+Memoria::Optional<int64_t> CSigHandle::PeekI64(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -150,7 +142,7 @@ std::optional<int64_t> CSigHandle::ReadI64(ptrdiff_t offset)
 	return Memoria::ReadI64(*_output, offset);
 }
 
-std::optional<float> CSigHandle::ReadFloat(ptrdiff_t offset)
+Memoria::Optional<float> CSigHandle::PeekFloat(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -158,7 +150,7 @@ std::optional<float> CSigHandle::ReadFloat(ptrdiff_t offset)
 	return Memoria::ReadFloat(*_output, offset);
 }
 
-std::optional<double> CSigHandle::ReadDouble(ptrdiff_t offset)
+Memoria::Optional<double> CSigHandle::PeekDouble(ptrdiff_t offset)
 {
 	if (*_output == nullptr)
 		return std::nullopt;
@@ -166,7 +158,7 @@ std::optional<double> CSigHandle::ReadDouble(ptrdiff_t offset)
 	return Memoria::ReadDouble(*_output, offset);
 }
 
-bool CSigHandle::ReadAStr(char *out, size_t max_size, ptrdiff_t offset)
+bool CSigHandle::PeekAStr(char *out, size_t max_size, ptrdiff_t offset)
 {
 	if (!_output || !*_output)
 		return false;
@@ -174,7 +166,7 @@ bool CSigHandle::ReadAStr(char *out, size_t max_size, ptrdiff_t offset)
 	return Memoria::ReadAStr(*_output, out, max_size, offset);
 }
 
-bool CSigHandle::ReadWStr(wchar_t *out, size_t max_size, ptrdiff_t offset)
+bool CSigHandle::PeekWStr(wchar_t *out, size_t max_size, ptrdiff_t offset)
 {
 	if (!_output || !*_output)
 		return false;
@@ -189,7 +181,7 @@ CSigHandle &CSigHandle::FindU8(uint8_t value, bool backward, ptrdiff_t offset)
 
     auto result = Memoria::FindU8(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
     return *this;
 }
 
@@ -200,7 +192,7 @@ CSigHandle &CSigHandle::FindU16(uint16_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindU16(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -211,7 +203,7 @@ CSigHandle &CSigHandle::FindU24(uint8_t value[3], bool backward, ptrdiff_t offse
 
 	auto result = Memoria::FindU24(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -222,7 +214,7 @@ CSigHandle &CSigHandle::FindU24(uint32_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindU24(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -233,7 +225,7 @@ CSigHandle &CSigHandle::FindU32(uint32_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindU32(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -244,7 +236,7 @@ CSigHandle &CSigHandle::FindU64(uint64_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindU64(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -255,7 +247,7 @@ CSigHandle &CSigHandle::FindI8(int8_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindI8(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -266,7 +258,7 @@ CSigHandle &CSigHandle::FindI16(int16_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindI16(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -277,7 +269,7 @@ CSigHandle &CSigHandle::FindI24(int8_t value[3], bool backward, ptrdiff_t offset
 
 	auto result = Memoria::FindI24(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -288,7 +280,7 @@ CSigHandle &CSigHandle::FindI24(int32_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindI24(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -299,7 +291,7 @@ CSigHandle &CSigHandle::FindI32(int32_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindI32(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -310,7 +302,7 @@ CSigHandle &CSigHandle::FindI64(int64_t value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindI64(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -321,7 +313,7 @@ CSigHandle &CSigHandle::FindFloat(float value, bool backward, ptrdiff_t offset)
 
 	auto result = Memoria::FindFloat(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -332,7 +324,7 @@ CSigHandle &CSigHandle::FindDouble(double value, bool backward, ptrdiff_t offset
 
 	auto result = Memoria::FindDouble(*_output, _mem_begin, _mem_end, value, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -343,7 +335,7 @@ CSigHandle &CSigHandle::FindBlock(const void *data, size_t size, bool backward, 
 
 	auto result = Memoria::FindBlock(*_output, _mem_begin, _mem_end, data, size, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -354,7 +346,7 @@ CSigHandle &CSigHandle::FindSignature(const CSignature &sig, bool backward, ptrd
 
 	auto result = Memoria::FindSignature(*_output, _mem_begin, _mem_end, sig, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -378,7 +370,7 @@ CSigHandle &CSigHandle::FindReference(const void *data, uint16_t opcode, bool se
 	auto result = Memoria::FindReference(*_output, _mem_begin, _mem_end, data, opcode, search_absolute, search_relative, 
 		backward, offset, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -389,7 +381,7 @@ CSigHandle &CSigHandle::FindAStr(const char *data, bool backward, ptrdiff_t offs
 
 	auto result = Memoria::FindAStr(*_output, _mem_begin, _mem_end, data, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -400,7 +392,7 @@ CSigHandle &CSigHandle::FindWStr(const wchar_t *data, bool backward, ptrdiff_t o
 
 	auto result = Memoria::FindWStr(*_output, _mem_begin, _mem_end, data, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -411,14 +403,14 @@ CSigHandle &CSigHandle::FindRelative(uint16_t opcode, size_t index, bool backwar
 
 	auto result = Memoria::FindRelative(*_output, _mem_begin, _mem_end, opcode, index, backward, offset);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
 CSigHandle &CSigHandle::Deref()
 {
 	if (*_output != nullptr)
-		SetOutputInternally(*_output, true);
+		SetPointerResult(*_output, true);
 
 	return *this;
 }
@@ -428,7 +420,7 @@ CSigHandle &CSigHandle::Rip()
 	if (*_output != nullptr)
 	{
 		void *result = Memoria::RelToAbsEx(*_output, 0, sizeof(uint32_t));
-		SetOutputInternally(result, false);
+		SetPointerResult(result, false);
 	}
 
 	return *this;
@@ -439,7 +431,7 @@ CSigHandle &CSigHandle::Rip(ptrdiff_t offset)
 	if (*_output != nullptr)
 	{
 		void *result = Memoria::RelToAbs(*_output, offset);
-		SetOutputInternally(result, false);
+		SetPointerResult(result, false);
 	}
 
 	return *this;
@@ -451,7 +443,7 @@ CSigHandle &CSigHandle::Rip(ptrdiff_t pre_offset, ptrdiff_t post_offset)
 	{
 		PtrOffset(pre_offset);
 		void *result = Memoria::RelToAbs(*_output, post_offset);
-		SetOutputInternally(result, false);
+		SetPointerResult(result, false);
 	}
 
 	return *this;
@@ -466,7 +458,7 @@ CSigHandle &CSigHandle::PtrOffset(ptrdiff_t value)
 
 	result = Memoria::PtrOffset(*_output, value);
 
-	SetOutputInternally(result, false);
+	SetPointerResult(result, false);
 	return *this;
 }
 
@@ -483,7 +475,7 @@ CSigHandle &CSigHandle::Sub(size_t value)
 CSigHandle &CSigHandle::Align(size_t value)
 {
 	if (*_output != nullptr)
-		SetOutputInternally((void *)((intptr_t)(*_output) & ~(value - 1)), false);
+		SetPointerResult((void *)((intptr_t)(*_output) & ~(value - 1)), false);
 
 	return *this;
 }
@@ -501,7 +493,7 @@ ptrdiff_t CSigHandle::GetOffset() const
 
 void CSigHandle::Reset()
 {
-	SetOutputInternally(_mem_begin, false);
+	SetPointerResult(_mem_begin, false);
 }
 
 void CSigHandle::Invalidate()
@@ -518,7 +510,7 @@ void CSigHandle::ForceOutput(const void *value)
 		return;
 	}
 
-	SetOutputInternally(value, false);
+	SetPointerResult(value, false);
 }
 
 void *CSigHandle::CurrentOutput() const

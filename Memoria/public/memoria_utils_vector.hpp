@@ -26,7 +26,6 @@
 #include "memoria_common.hpp"
 #include "memoria_core_mempool.hpp"
 #include "memoria_utils_assert.hpp"
-#include "memoria_utils_string.hpp"
 
 MEMORIA_BEGIN
 
@@ -253,12 +252,38 @@ public:
 	void zero_initialize()
 	{
 		if (_data)
-			MemFill(_data, 0, sizeof(T) * _capacity);
+			memset(_data, 0, sizeof(T) * _capacity);
 	}
 
 	bool would_overflow(size_t count = 1) const
 	{
 		return _size + count > _capacity;
+	}
+
+	template<typename Key>
+	iterator find_value(const Key &key)
+		requires requires(T &value) { { value.first } -> std::convertible_to<Key>; }
+	{
+		for (size_t i = 0; i < _size; ++i)
+		{
+			if (_data[i].first == key)
+				return _data + i;
+		}
+
+		return end();
+	}
+
+	template<typename Key>
+	const_iterator find_value(const Key &key) const
+		requires requires(const T &value) { { value.first } -> std::convertible_to<Key>; }
+	{
+		for (size_t i = 0; i < _size; ++i)
+		{
+			if (_data[i].first == key)
+				return _data + i;
+		}
+
+		return end();
 	}
 };
 
@@ -270,6 +295,8 @@ template<typename T>
 class Vector : public VectorBase<T>
 {
 private:
+	bool _locked = false;
+
 	void ensure_capacity(size_t min_capacity)
 	{
 		if (min_capacity <= this->_capacity)
@@ -279,7 +306,7 @@ private:
 	}
 
 public:
-	Vector() : VectorBase<T>()
+	Vector() : VectorBase<T>(), _locked(false)
 	{
 		this->_data = nullptr;
 		this->_size = 0;
@@ -304,10 +331,120 @@ public:
 		}
 	}
 
+	//
+	// *** The Rule of Five ***
+	//
+	// ~T()                              // 1
+	// T(const T &other)                 // 2
+	// T &operator=(const T &other)      // 3
+	// T(T &&other) noexcept             // 4
+	// T &operator=(T &&other) noexcept  // 5
+	//
+	// If any one of these methods is implemented, the compiler stops automatically 
+	// generating the others - either it doesn't generate them at all, or it does so 
+	// incorrectly from the resource management perspective of the programmer. In other words:
+	//
+	// [!] If a class manages resources manually (e.g., raw memory, file descriptors,
+	//     sockets, etc.), and any of these methods is implemented, it is very likely
+	//     that all five should be implemented.
+	//
+	// Not understanding this idea led me to a situation where I started encountering 
+	// crashes inside Vector<T>::reserve when trying to call std::destroy_at for `_data[i]`;
+	// the crash occurred when attempting to deallocate nested `Vector<T>` objects.
+	//
+
 	~Vector()
 	{
 		VectorBase<T>::clear();
 		::operator delete(this->_data);
+	}
+
+	Vector(const Vector &other) : _locked(other._locked)
+	{
+		this->_data = nullptr;
+		this->_size = 0;
+		this->_capacity = 0;
+
+		if (other._capacity > 0)
+		{
+			this->_data = static_cast<T *>(::operator new(other._capacity * sizeof(T)));
+			this->_capacity = other._capacity;
+
+			for (size_t i = 0; i < other._size; ++i)
+				std::construct_at(this->_data + i, other._data[i]);
+
+			this->_size = other._size;
+		}
+	}
+
+	Vector &operator=(const Vector &other)
+	{
+		if (this == &other)
+			return *this;
+
+		this->clear();
+		::operator delete(this->_data);
+
+		this->_data = nullptr;
+		this->_size = 0;
+		this->_capacity = 0;
+		_locked = other._locked;
+
+		if (other._capacity > 0)
+		{
+			this->_data = static_cast<T *>(::operator new(other._capacity * sizeof(T)));
+			this->_capacity = other._capacity;
+
+			for (size_t i = 0; i < other._size; ++i)
+				std::construct_at(this->_data + i, other._data[i]);
+
+			this->_size = other._size;
+		}
+
+		return *this;
+	}
+
+	Vector(Vector &&other) noexcept : _locked(other._locked)
+	{
+		this->_data = other._data;
+		this->_size = other._size;
+		this->_capacity = other._capacity;
+
+		other._data = nullptr;
+		other._size = 0;
+		other._capacity = 0;
+		other._locked = false;
+	}
+
+	Vector &operator=(Vector &&other) noexcept
+	{
+		if (this == &other)
+			return *this;
+
+		this->clear();
+		::operator delete(this->_data);
+
+		this->_data = other._data;
+		this->_size = other._size;
+		this->_capacity = other._capacity;
+		_locked = other._locked;
+
+		other._data = nullptr;
+		other._size = 0;
+		other._capacity = 0;
+		other._locked = false;
+
+		return *this;
+	}
+
+	void lock()
+	{
+		_locked = true;
+	}
+
+	bool is_locked() const
+	{
+		return _locked;
 	}
 
 	//
@@ -406,6 +543,11 @@ public:
 
 	void reserve(size_t new_capacity)
 	{
+		AssertMsg(!_locked, "Reallocation is not allowed - container is locked.");
+
+		if (_locked)
+			return;
+
 		if (new_capacity <= this->_capacity)
 			return;
 
@@ -413,7 +555,17 @@ public:
 
 		for (size_t i = 0; i < this->_size; ++i)
 		{
-			std::construct_at(new_data + i, std::move(this->_data[i]));
+			if constexpr (std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>)
+			{
+				// uninitialized move
+				std::construct_at(new_data + i, std::move(this->_data[i]));
+			}
+			else
+			{
+				// uninitialized copy
+				std::construct_at(new_data + i, this->_data[i]);
+			}
+
 			std::destroy_at(this->_data + i);
 		}
 
@@ -483,6 +635,90 @@ private:
 
 public:
 	constexpr FixedVector() = default;
+
+	//
+	// The `requires` keyword (since C++20) is very useful and worth remembering.
+	//
+	// At some point, I found myself in a situation where I had to add a destructor
+	// to the FixedVector class. This triggered the generation of destructors for
+	// global objects in one of my projects, which in turn led to the generation
+	// of `atexit` calls.
+	// 
+	// In my project, the use of `atexit` was prohibited, so I came up with a solution
+	// using `requires`, which allows disabling the creation of a method for a class
+	// under certain conditions. In my case, the generation of a destructor call was
+	// not necessary, since they did not contain any non-POD types (these could be
+	// plain function pointers, for example), but the destructor was still being invoked.
+	// The `is_trivially_destructible_v` check via `requires` allows this to be disabled.
+	//
+
+	~FixedVector() requires (!std::is_trivially_destructible_v<T>)
+	{
+		this->clear();
+	}
+	
+	~FixedVector() requires (std::is_trivially_destructible_v<T>) = default;
+	
+	FixedVector(const FixedVector &other)
+	{
+		this->_data = reinterpret_cast<T *>(&_container);
+		this->_capacity = MaxItems;
+		this->_size = 0;
+	
+		for (size_t i = 0; i < other._size; ++i)
+		{
+			std::construct_at(this->_data + i, other._data[i]);
+		}
+		this->_size = other._size;
+	}
+	
+	FixedVector &operator=(const FixedVector &other)
+	{
+		if (this == &other)
+			return *this;
+	
+		this->clear();
+	
+		for (size_t i = 0; i < other._size; ++i)
+		{
+			std::construct_at(this->_data + i, other._data[i]);
+		}
+		this->_size = other._size;
+	
+		return *this;
+	}
+	
+	FixedVector(FixedVector &&other) noexcept
+	{
+		this->_data = reinterpret_cast<T *>(&_container);
+		this->_capacity = MaxItems;
+		this->_size = 0;
+	
+		for (size_t i = 0; i < other._size; ++i)
+		{
+			std::construct_at(this->_data + i, std::move(other._data[i]));
+		}
+		this->_size = other._size;
+	
+		other.clear();
+	}
+	
+	FixedVector &operator=(FixedVector &&other) noexcept
+	{
+		if (this == &other)
+			return *this;
+	
+		this->clear();
+	
+		for (size_t i = 0; i < other._size; ++i)
+		{
+			std::construct_at(this->_data + i, std::move(other._data[i]));
+		}
+		this->_size = other._size;
+	
+		other.clear();
+		return *this;
+	}
 
 	//
 	// The parent `push`, `emplace`, and `insert` methods are defined in the derived class 
@@ -600,6 +836,22 @@ private:
 	}
 
 public:
+	//
+	// I would prefer InlineVector<T> to be neither copyable nor movable at all.
+	// This comes with certain challenges and limitations (for example,
+	// we would be responsible for tracking buffer sizes during copying).
+	// I would rather simply prohibit both moving and copying, especially given that
+	// InlineVector<T> is experimental and can, in principle, be easily replaced
+	// by the FixedVector<T> class (in other words – InlineVector<T> is not necessary,
+	// it's just a pity to delete it).
+	//
+
+	~InlineVector() = delete;
+	InlineVector(const InlineVector &) = delete;
+	InlineVector &operator=(const InlineVector &) = delete;
+	InlineVector(InlineVector &&) = delete;
+	InlineVector &operator=(InlineVector &&) = delete;
+
 	constexpr InlineVector() noexcept
 	{
 		this->_data = nullptr;

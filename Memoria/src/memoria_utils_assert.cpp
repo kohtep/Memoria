@@ -1,6 +1,5 @@
 #include "memoria_utils_assert.hpp"
 
-#include "memoria_utils_string.hpp"
 #include "memoria_utils_format.hpp"
 
 #include "Windows.h"

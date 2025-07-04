@@ -2,7 +2,6 @@
 
 #include "memoria_utils_buffer.hpp"
 #include "memoria_utils_assert.hpp"
-#include "memoria_utils_string.hpp"
 
 #include "memoria_core_write.hpp"
 #include "memoria_core_misc.hpp"
@@ -323,7 +322,7 @@ CTrampoline::CTrampoline(CHookMgr *manager, void *target, const void *hook, bool
 	buf.WriteU8(0xE9);
 	buf.WriteRelative(_hook, GetJmpHook());
 
-	MemCopy(GetOriginal(), target, size);
+	memcpy(GetOriginal(), target, size);
 
 	auto _backup_new = PtrOffset(GetOriginal(), size);
 	auto _target_new = PtrOffset(target, size);
@@ -339,7 +338,7 @@ CTrampoline::~CTrampoline()
 
 bool CTrampoline::IsActive()
 {
-	return MemCompare(_pointer, const_cast<const void *>(GetOriginal()), _size) != 0;
+	return memcmp(_pointer, const_cast<const void *>(GetOriginal()), _size) != 0;
 }
 
 bool CTrampoline::Hook()
@@ -482,7 +481,7 @@ CShadowVTable::CShadowVTable(void *instance, size_t methodCount)
 
 	_vmt_shadow = std::make_unique<void *[]>(methodCount);
 
-	MemCopy(_vmt_shadow.get(), _vmt_org, methodCount * sizeof(void *));
+	memcpy(_vmt_shadow.get(), _vmt_org, methodCount * sizeof(void *));
 	std::construct_at(&_vmt_original, instance);
 
 	this->_instance->vtable = _vmt_shadow.get();

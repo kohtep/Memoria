@@ -4,7 +4,6 @@
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
 #include "memoria_core_search.hpp"
-#include "memoria_utils_string.hpp"
 
 MEMORIA_BEGIN
 
@@ -119,7 +118,7 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 	size_t name_len;
 	bool is_full_name;
 
-	StrCopyA(name, rtti_name);
+	strcpy_s(name, rtti_name);
 
 	if (*(uint32_t *)name == CLASS_SIGNATURE)
 	{
@@ -129,8 +128,8 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 	else
 	{
 		is_full_name = false;
-		StrCatA(name, "@");
-		name_len = StrLenA(name);
+		strcat_s(name, "@");
+		name_len = strlen(name);
 	}
 
 	void *p = const_cast<void *>(addr_start);
@@ -155,12 +154,12 @@ void *GetRTTIDescriptor(const void *addr_start, const void *addr_min, const void
 
 		if (is_full_name)
 		{
-			if (StrICompA(typeDescriptor->Name, name) == 0)
+			if (_stricmp(typeDescriptor->Name, name) == 0)
 				return typeDescriptor;
 		}
 		else
 		{
-			if (StrLICompA(&(typeDescriptor->Name[4]), name, name_len) == 0)
+			if (_strnicmp(&(typeDescriptor->Name[4]), name, name_len) == 0)
 				return typeDescriptor;
 		}
 	} while (true);

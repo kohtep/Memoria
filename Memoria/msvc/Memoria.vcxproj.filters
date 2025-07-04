@@ -84,9 +84,6 @@
     <ClCompile Include="..\src\memoria_utils_secure.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\memoria_utils_string.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\memoria_common.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -192,9 +189,6 @@
       <Filter>public</Filter>
     </ClInclude>
     <ClInclude Include="..\public\memoria_utils_secure.hpp">
-      <Filter>public</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\memoria_utils_string.hpp">
       <Filter>public</Filter>
     </ClInclude>
     <ClInclude Include="..\public\memoria_utils_vector.hpp">

@@ -4,8 +4,6 @@
 #include "memoria_core_misc.hpp"
 #include "memoria_core_errors.hpp"
 
-#include "memoria_utils_string.hpp"
-
 #include <Windows.h>
 #include <string_view>
 
@@ -37,11 +35,11 @@ bool WriteMemory(void *addr, const void *data, size_t size, ptrdiff_t offset, bo
 
 	if (use_setmem)
 	{
-		MemFill(addr, static_cast<int>(*static_cast<const uint8_t *>(data)), size);
+		memset(addr, static_cast<int>(*static_cast<const uint8_t *>(data)), size);
 	}
 	else
 	{
-		MemCopy(addr, data, size);
+		memcpy(addr, data, size);
 	}
 
 	if (!VirtualProtect(addr, size, old_protection, &old_protection))
@@ -158,7 +156,7 @@ bool WriteAStr(void *addr, const char *value, ptrdiff_t offset)
 	if (!value) 
 		return false;
 
-	size_t len = StrLenA(value);
+	size_t len = strlen(value);
 	return WriteMemory(addr, value, (len + 1) * sizeof(char), offset);
 }
 
@@ -167,7 +165,7 @@ bool WriteWStr(void *addr, const wchar_t *value, ptrdiff_t offset)
 	if (!value) 
 		return false;
 
-	size_t len = StrLenW(value);
+	size_t len = wcslen(value);
 	return WriteMemory(addr, value, (len + 1) * sizeof(wchar_t), offset);
 }
 

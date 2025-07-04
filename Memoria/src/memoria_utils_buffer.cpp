@@ -2,9 +2,6 @@
 
 #include "memoria_core_write.hpp"
 #include "memoria_core_misc.hpp"
-#include "memoria_utils_string.hpp"
-
-#include "memoria_utils_string.hpp"
 
 MEMORIA_BEGIN
 
@@ -45,7 +42,7 @@ bool CBuffer::Clone(void *dest, bool is_code, ptrdiff_t offset)
 	}
 	else
 	{
-		MemCopy(PtrOffset(dest, offset), _data, _pos);
+		memcpy(PtrOffset(dest, offset), _data, _pos);
 		return true;
 	}
 }
@@ -123,7 +120,7 @@ void CWriteBuffer::WriteString(const char *str)
 	if (!str) 
 		return;
 
-	size_t len = StrLenA(str);
+	size_t len = strlen(str);
 	WriteData(str, len + 1);
 }
 
@@ -132,7 +129,7 @@ void CWriteBuffer::WriteData(const void *src, size_t size)
 	if (_pos + size > _size)
 		return;
 
-	MemCopy(&_data[_pos], src, size);
+	memcpy(&_data[_pos], src, size);
 	_pos += size;
 }
 
@@ -147,7 +144,7 @@ uint16_t CReadBuffer::ReadU16()
 		return 0;
 
 	uint16_t value;
-	MemCopy(&value, &_data[_pos], sizeof(value));
+	memcpy(&value, &_data[_pos], sizeof(value));
 	_pos += 2;
 
 	return value;
@@ -159,7 +156,7 @@ uint32_t CReadBuffer::ReadU32()
 		return 0;
 
 	uint32_t value;
-	MemCopy(&value, &_data[_pos], sizeof(value));
+	memcpy(&value, &_data[_pos], sizeof(value));
 	_pos += 4;
 
 	return value;
@@ -171,7 +168,7 @@ uint64_t CReadBuffer::ReadU64()
 		return 0;
 
 	uint64_t value;
-	MemCopy(&value, &_data[_pos], sizeof(value));
+	memcpy(&value, &_data[_pos], sizeof(value));
 	_pos += 8;
 
 	return value;
@@ -218,7 +215,7 @@ void CReadBuffer::ReadData(void *dest, size_t size)
 	if (_pos + size > _size)
 		return;
 
-	MemCopy(dest, &_data[_pos], size);
+	memcpy(dest, &_data[_pos], size);
 	_pos += size;
 }
 
